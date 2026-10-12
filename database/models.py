@@ -35,8 +35,9 @@ class User(Base):
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
     role: Mapped[str] = mapped_column(String(20), nullable=False)
     full_name: Mapped[str] = mapped_column(String(150), nullable=False)
-    email: Mapped[str] = mapped_column(String(100))
+    email: Mapped[str | None] = mapped_column(String(100))
     last_login: Mapped[datetime | None] = mapped_column(DateTime)
+
 
     teacher: Mapped["Teacher | None"] = relationship(
         back_populates="user", uselist=False
@@ -55,8 +56,8 @@ class Teacher(Base):
     teacher_id: Mapped[int] = mapped_column(Integer, primary_key=True)
     user_id: Mapped[int | None] = mapped_column(ForeignKey("users.user_id"))
     full_name: Mapped[str] = mapped_column(String(150), nullable=False)
-    phone: Mapped[str] = mapped_column(String(20))
-    subjects: Mapped[str] = mapped_column(String(255))
+    phone: Mapped[str | None] = mapped_column(String(20))
+    subjects: Mapped[str | None] = mapped_column(String(255))
     hire_date: Mapped[date | None] = mapped_column(Date)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
 
@@ -77,9 +78,9 @@ class Group(Base):
     group_id: Mapped[int] = mapped_column(Integer, primary_key=True)
     teacher_id: Mapped[int | None] = mapped_column(ForeignKey("teachers.teacher_id"))
     name: Mapped[str] = mapped_column(String(100), nullable=False)
-    direction: Mapped[str] = mapped_column(String(100))
-    age_category: Mapped[str] = mapped_column(String(20))
-    level: Mapped[str] = mapped_column(String(20))
+    direction: Mapped[str | None] = mapped_column(String(100))
+    age_category: Mapped[str | None] = mapped_column(String(20))
+    level: Mapped[str | None] = mapped_column(String(20))
     capacity: Mapped[int] = mapped_column(Integer, default=15)
     start_date: Mapped[date | None] = mapped_column(Date)
 
@@ -100,22 +101,19 @@ class Student(Base):
     student_id: Mapped[int] = mapped_column(Integer, primary_key=True)
     full_name: Mapped[str] = mapped_column(String(150), nullable=False)
     birth_date: Mapped[date | None] = mapped_column(Date)
-    phone: Mapped[str] = mapped_column(String(20))
-    email: Mapped[str] = mapped_column(String(100))
-    direction: Mapped[str] = mapped_column(String(100))
-    level: Mapped[str] = mapped_column(String(20))
+    phone: Mapped[str | None] = mapped_column(String(20))
+    email: Mapped[str | None] = mapped_column(String(100))
+    direction: Mapped[str | None] = mapped_column(String(100))
+    level: Mapped[str | None] = mapped_column(String(20))
     enroll_date: Mapped[date | None] = mapped_column(Date)
     status: Mapped[str] = mapped_column(String(20), default="active")
-    parent_name: Mapped[str] = mapped_column(String(150))
+    parent_name: Mapped[str | None] = mapped_column(String(150))
 
     groups: Mapped[list["GroupStudent"]] = relationship(back_populates="student")
     subscriptions: Mapped[list["Subscription"]] = relationship(
         back_populates="student"
     )
     payments: Mapped[list["Payment"]] = relationship(back_populates="student")
-    notifications: Mapped[list["Notification"]] = relationship(
-        back_populates="student"
-    )
 
     def __repr__(self) -> str:
         """Строковое представление для отладки."""
@@ -286,7 +284,7 @@ class Notification(Base):
     subscription_id: Mapped[int | None] = mapped_column(
         ForeignKey("subscriptions.subscription_id")
     )
-    type: Mapped[str] = mapped_column(String(50))
+    type: Mapped[str | None] = mapped_column(String(50))
     message: Mapped[str] = mapped_column(Text)
     created_at: Mapped[datetime | None] = mapped_column(
         DateTime, default=datetime.now
