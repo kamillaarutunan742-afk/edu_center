@@ -1,16 +1,16 @@
-"""Сервис платежей: регистрация оплат и отчёт по выручке."""
+"""Сервис финансов: оплаты, выручка, таблица платежей."""
 
 from datetime import date
 
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from database.models import Payment
+from database.models import Payment, Student, Subscription, SubscriptionType
 from repositories.base_repository import BaseRepository
 
 
 class PaymentService:
-    """Бизнес-логика платежей."""
+    """Бизнес-логика оплат."""
 
     def __init__(self, session: Session) -> None:
         """Инициализирует сервис.
@@ -21,52 +21,78 @@ class PaymentService:
         self.session = session
         self.repo = BaseRepository(Payment, session)
 
-    def register_payment(self, student_id: int, amount: float, subscription_id: int | None = None) -> Payment:
-        """Регистрирует оплату.
-
-        Args:
-            student_id: идентификатор ученика.
-            amount: сумма платежа.
-            subscription_id: связанный абонемент (если есть).
+    def get_all_payments(self) -> list[Payment]:
+        """Возвращает все оплаты, свежие сверху.
 
         Returns:
-            Созданный объект Payment.
-
-        Raises:
-            ValueError: если сумма не положительная.
+            Список объектов Payment.
         """
-        if amount <= 0:
-            raise ValueError("Сумма платежа должна быть положительной")
-        return self.repo.create(
-            student_id=student_id,
-            amount=amount,
-            subscription_id=subscription_id,
-            payment_date=date.today(),
-        )
-
-    def get_student_payments(self, student_id: int) -> list[Payment]:
-        """Возвращает платежи ученика."""
-        return list(
-            self.session.scalars(
-                select(Payment)
-                .where(Payment.student_id == student_id)
-                .order_by(Payment.payment_date)
-            )
+        return sorted(
+            self.repo.get_all(), key=lambda p: p.payment_date, reverse=True
         )
 
     def get_revenue(self, start: date, end: date) -> float:
-        """Считает выручку за период (для отчётов и Dashboard).
+        """Считает выручку за период.
 
         Args:
-            start: начало периода (включительно).
-            end: конец периода (включительно).
+            start: дата начала.
+            end: дата конца.
 
         Returns:
-            Сумма платежей за период; 0.0, если платежей нет.
+            Сумма оплат за период.
         """
-        total = self.session.scalar(
-            select(func.sum(Payment.amount)).where(
-                Payment.payment_date >= start, Payment.payment_date <= end
+        return self.session.scalar(
+            select(func.coalesce(func.sum(Payment.amount), 0.0)).where(
+                Payment.payment_date >= start,
+                Payment.payment_date <= end,
             )
-        )
-        return float(total or 0.0)
+        ) or 0.0
+
+    def _latest_subscription(self, student_id: int) -> Subscription | None:
+        """Возвращает последний абонемент ученика.
+
+        Args:
+            student_id: идентификатор ученика.
+
+        Returns:
+            Объект Subscription или None.
+        """
+        return self.session.scalars(
+            select(Subscription)
+            .where(Subscription.student_id == student_id)
+            .order_by(Subscription.subscription_id.desc())
+        ).first()
+
+    def _subscription_name(self, subscription: Subscription | None) -> str:
+        """Возвращает название типа абонемента без опоры на связь.
+
+        Args:
+            subscription: объект Subscription или None.
+
+        Returns:
+            Название типа или «—».
+        """
+        if subscription is None:
+            return "—"
+        sub_type = subscription.subscription_type
+        if sub_type is None and getattr(subscription, "type_id", None):
+            sub_type = self.session.get(SubscriptionType, subscription.type_id)
+        return sub_type.name if sub_type is not None else "—"
+
+    def get_table_rows(self) -> list[tuple]:
+        """Собирает строки для таблицы оплат.
+
+        Returns:
+            Кортежи (id, дата, ученик, абонемент, сумма, способ).
+        """
+        rows = []
+        for payment in self.get_all_payments():
+            student = self.session.get(Student, payment.student_id)
+            name = student.full_name if student is not None else "—"
+            latest = self._latest_subscription(payment.student_id)
+            method = getattr(payment, "method", "") or "—"
+            rows.append((
+                payment.payment_id, str(payment.payment_date), name,
+                self._subscription_name(latest), float(payment.amount), method,
+            ))
+        return rows

@@ -1,22 +1,21 @@
-"""Сервис посещаемости: отметка занятий и списание абонементов."""
-
-from datetime import date
+"""Сервис посещаемости: отметки занятий и списание абонементов."""
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from database.models import Attendance, Subscription
+from database.models import (
+    Attendance, Group, GroupStudent, Student, Subscription, SubscriptionType,
+)
 from repositories.base_repository import BaseRepository
 from services.subscription_service import SubscriptionService
 
-PRESENT = "present"
-ABSENT = "absent"
-
 
 class AttendanceService:
-    """Бизнес-логика журнала посещаемости."""
+    """Бизнес-логика посещаемости."""
 
-    VALID_STATUSES = (PRESENT, ABSENT)
+    STATUS_LABELS = {
+        "present": "Присутствовал", "absent": "Отсутствовал", "sick": "Болел",
+    }
 
     def __init__(self, session: Session) -> None:
         """Инициализирует сервис.
@@ -28,79 +27,142 @@ class AttendanceService:
         self.repo = BaseRepository(Attendance, session)
         self.subscriptions = SubscriptionService(session)
 
-    def mark(
-        self,
-        student_id: int,
-        group_id: int,
-        lesson_date: date,
-        schedule_id: int | None = None,
-        status: str = PRESENT,
-        spend_lesson: bool = True,
-    ) -> Attendance:
-        """Отмечает посещаемость ученика на занятии.
-
-        При статусе «present» списывает занятие с активного абонемента,
-        если списание разрешено (spend_lesson).
-
-        Args:
-            student_id: идентификатор ученика.
-            group_id: идентификатор группы.
-            lesson_date: дата занятия.
-            schedule_id: идентификатор строки расписания.
-            status: «present» или «absent».
-            spend_lesson: списывать ли занятие с абонемента.
+    def get_all_attendance(self) -> list[Attendance]:
+        """Возвращает все отметки.
 
         Returns:
-            Созданная запись Attendance.
+            Список объектов Attendance.
+        """
+        return self.repo.get_all()
+
+    def _resolve_students(self, group: Group) -> list[Student]:
+        """Превращает связи группы в объекты Student.
+
+        Args:
+            group: объект группы.
+
+        Returns:
+            Список учеников группы.
+        """
+        students: list[Student] = []
+        for item in group.students:
+            if hasattr(item, "full_name"):
+                students.append(item)
+                continue
+            student = self.session.get(Student, item.student_id)
+            if student is not None:
+                students.append(student)
+        return students
+
+    def mark_lesson(self, group: Group, lesson_date,
+                    statuses: dict[int, str]) -> None:
+        """Отмечает посещаемость группы на дату; присутствующим списывает занятие.
+
+        Args:
+            group: объект группы.
+            lesson_date: дата занятия.
+            statuses: словарь {student_id: статус}.
 
         Raises:
-            ValueError: при некорректном статусе или нехватке занятий.
+            ValueError: если у группы нет учеников.
         """
-        if status not in self.VALID_STATUSES:
-            raise ValueError(f"Недопустимый статус посещения: {status}")
-
-        subscription_id = None
-        if status == PRESENT and spend_lesson:
-            subscription = self.subscriptions.find_active_subscription(student_id)
-            if subscription is None:
-                raise ValueError("У ученика нет активного абонемента с занятиями")
-            self.subscriptions.spend_lesson(subscription)
-            subscription_id = subscription.subscription_id
-
-        existing = self.session.scalar(
-            select(Attendance).where(
-                Attendance.student_id == student_id,
-                Attendance.lesson_date == lesson_date,
-                Attendance.group_id == group_id,
+        students = self._resolve_students(group)
+        if not students:
+            raise ValueError("В этой группе нет учеников")
+        for student in students:
+            status = statuses.get(student.student_id, "absent")
+            record = self.session.scalar(
+                select(Attendance).where(
+                    Attendance.student_id == student.student_id,
+                    Attendance.lesson_date == lesson_date,
+                )
             )
-        )
-        if existing:
-            return self.repo.update(
-                existing, status=status, subscription_id=subscription_id
-            )
+            if record is not None:
+                record.status = status
+                if record.group_id is None:
+                    record.group_id = group.group_id
+            else:
+                self.repo.create(
+                    student_id=student.student_id,
+                    group_id=group.group_id,
+                    lesson_date=lesson_date, status=status,
+                )
+            if status == "present":
+                subscription = self.session.scalars(
+                    select(Subscription).where(
+                        Subscription.student_id == student.student_id,
+                        Subscription.status == "active",
+                    )
+                ).first()
+                if subscription is not None:
+                    try:
+                        self.subscriptions.spend_lesson(subscription)
+                    except ValueError:
+                        pass
+        self.session.commit()
 
-        return self.repo.create(
-            student_id=student_id,
-            group_id=group_id,
-            schedule_id=schedule_id,
-            subscription_id=subscription_id,
-            lesson_date=lesson_date,
-            status=status,
-        )
-
-    def get_group_journal(self, group_id: int) -> list[Attendance]:
-        """Возвращает все отметки посещаемости группы.
+    def get_table_rows(self, group_id: int | None = None) -> list[tuple]:
+        """Собирает строки для таблицы посещаемости.
 
         Args:
-            group_id: идентификатор группы.
+            group_id: фильтр по группе (None — все группы).
 
         Returns:
-            Список записей Attendance.
+            Кортежи (id, дата, группа, ученик, статус, абонемент, списано).
         """
-        return list(
-            self.session.scalars(
-                select(Attendance)
-                .where(Attendance.group_id == group_id)
-                .order_by(Attendance.lesson_date)
-            )
+        student_ids = None
+        if group_id is not None:
+            student_ids = {
+                link.student_id for link in self.session.scalars(
+                    select(GroupStudent).where(GroupStudent.group_id == group_id)
+                )
+            }
+        rows = []
+        records = sorted(
+            self.repo.get_all(), key=lambda r: r.lesson_date, reverse=True
         )
+        for record in records:
+            if student_ids is not None and record.student_id not in student_ids:
+                continue
+            student = self.session.get(Student, record.student_id)
+            if student is None:
+                continue
+            group_name = "—"
+            if getattr(record, "group_id", None):
+                group = self.session.get(Group, record.group_id)
+                if group is not None:
+                    group_name = group.name
+            if group_name == "—":
+                for link in self.session.scalars(
+                    select(GroupStudent).where(
+                        GroupStudent.student_id == student.student_id
+                    )
+                ):
+                    group = self.session.get(Group, link.group_id)
+                    if group is not None:
+                        group_name = group.name
+                        break
+
+            sub_name = "—"
+            latest_sub = self.session.scalars(
+                select(Subscription)
+                .where(Subscription.student_id == student.student_id)
+                .order_by(Subscription.subscription_id.desc())
+            ).first()
+            if latest_sub is not None:
+                sub_type = latest_sub.subscription_type
+                if sub_type is None and getattr(latest_sub, "type_id", None):
+                    sub_type = self.session.get(
+                        SubscriptionType, latest_sub.type_id
+                    )
+                if sub_type is not None:
+                    sub_name = sub_type.name
+
+            spent = "-1" if record.status == "present" else "—"
+            rows.append((
+                record.attendance_id, str(record.lesson_date), group_name,
+                student.full_name,
+                self.STATUS_LABELS.get(record.status, record.status),
+                sub_name, spent,
+            ))
+        return rows

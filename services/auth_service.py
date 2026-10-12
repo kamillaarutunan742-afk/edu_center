@@ -1,59 +1,130 @@
-"""Сервис аутентификации: вход в систему и управление пользователями.
-
-Пароли хранятся в виде SHA-256 хэша с солью — в открытом виде пароли
-не хранят никогда.
-"""
+"""Сервис аутентификации: вход, регистрация, смена и восстановление пароля."""
 
 import hashlib
-import secrets
 
 from sqlalchemy import select
-from sqlalchemy.orm import Session
 
+from database.db import SessionLocal
 from database.models import User
 
+MIN_PASSWORD_LEN = 4
 
-def hash_password(password: str, salt: str | None = None) -> str:
-    """Хэширует пароль с солью.
+
+def hash_password(password: str) -> str:
+    """Хеширует пароль SHA-256.
 
     Args:
         password: пароль в открытом виде.
-        salt: соль; если не задана, генерируется случайно.
 
     Returns:
-        Строка вида "salt:hash".
+        Шестнадцатеричная строка хеша.
     """
-    salt = salt or secrets.token_hex(8)
-    digest = hashlib.sha256((salt + password).encode()).hexdigest()
-    return f"{salt}:{digest}"
+    return hashlib.sha256(password.encode("utf-8")).hexdigest()
 
 
-def verify_password(password: str, stored: str) -> bool:
-    """Проверяет пароль против сохранённого хэша.
+def authenticate(login: str, password: str) -> User | None:
+    """Проверяет логин и пароль.
 
     Args:
-        password: введённый пользователем пароль.
-        stored: сохранённая строка "salt:hash".
-
-    Returns:
-        True, если пароль верный.
-    """
-    salt, _ = stored.split(":", 1)
-    return hash_password(password, salt) == stored
-
-
-def authenticate(session: Session, login: str, password: str) -> User | None:
-    """Выполняет вход пользователя.
-
-    Args:
-        session: сессия БД.
         login: логин пользователя.
-        password: введённый пароль.
+        password: пароль в открытом виде.
 
     Returns:
-        Объект User при успешном входе, иначе None.
+        Объект User при успехе, иначе None.
     """
-    user = session.scalar(select(User).where(User.login == login))
-    if user is None or not verify_password(password, user.password_hash):
+    session = SessionLocal()
+    try:
+        user = session.scalar(select(User).where(User.login == login))
+        if user is not None and user.password_hash == hash_password(password):
+            session.refresh(user)
+            return user
         return None
-    return user
+    finally:
+        session.close()
+
+
+def register_user(
+    login: str,
+    password: str,
+    role: str = "student",
+    full_name: str | None = None,
+) -> User | None:
+    """Регистрирует нового пользователя.
+
+    Args:
+        login: логин.
+        password: пароль.
+        role: роль пользователя.
+        full_name: полное имя (по умолчанию — логин).
+
+    Returns:
+        Созданный User или None, если логин занят или пароль короткий.
+    """
+    if len(password) < MIN_PASSWORD_LEN:
+        return None
+    session = SessionLocal()
+    try:
+        existing = session.scalar(select(User).where(User.login == login))
+        if existing is not None:
+            return None
+        user = User(
+            login=login,
+            password_hash=hash_password(password),
+            role=role,
+            full_name=full_name or login,
+        )
+        session.add(user)
+        session.commit()
+        session.refresh(user)
+        return user
+    finally:
+        session.close()
+
+
+def change_password(login: str, old_password: str, new_password: str) -> tuple[bool, str]:
+    """Меняет пароль после проверки текущего.
+
+    Args:
+        login: логин пользователя.
+        old_password: текущий пароль.
+        new_password: новый пароль.
+
+    Returns:
+        Кортеж (успех, сообщение).
+    """
+    session = SessionLocal()
+    try:
+        user = session.scalar(select(User).where(User.login == login))
+        if user is None or user.password_hash != hash_password(old_password):
+            return False, "Текущий пароль неверен"
+        if len(new_password) < MIN_PASSWORD_LEN:
+            return False, f"Новый пароль короче {MIN_PASSWORD_LEN} символов"
+        user.password_hash = hash_password(new_password)
+        session.commit()
+        return True, "Пароль изменён"
+    finally:
+        session.close()
+
+
+def reset_password(login: str, new_password: str) -> tuple[bool, str]:
+    """Сбрасывает пароль по логину (упрощённое восстановление).
+
+    Args:
+        login: логин пользователя.
+        new_password: новый пароль.
+
+    Returns:
+        Кортеж (успех, сообщение).
+    """
+    session = SessionLocal()
+    try:
+        user = session.scalar(select(User).where(User.login == login))
+        if user is None:
+            return False, "Пользователь с таким логином не найден"
+        if len(new_password) < MIN_PASSWORD_LEN:
+            return False, f"Пароль короче {MIN_PASSWORD_LEN} символов"
+        user.password_hash = hash_password(new_password)
+        session.commit()
+        return True, "Пароль обновлён, войдите с новым паролем"
+    finally:
+        session.close()
