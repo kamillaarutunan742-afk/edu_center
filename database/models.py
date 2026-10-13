@@ -3,7 +3,14 @@
 from datetime import date, datetime
 
 from sqlalchemy import (
-    Boolean, Column, Date, DateTime, Float, ForeignKey, Integer, String,
+    Boolean,
+    Column,
+    Date,
+    DateTime,
+    Float,
+    ForeignKey,
+    Integer,
+    String,
 )
 from sqlalchemy.orm import declarative_base, relationship
 
@@ -47,14 +54,20 @@ class Group(Base):
     teacher_id = Column(Integer, ForeignKey("teachers.teacher_id"))
     teacher = relationship("Teacher", back_populates="groups")
     student_links = relationship(
-        "GroupStudent", back_populates="group", cascade="all, delete-orphan",
+        "GroupStudent",
+        back_populates="group",
+        cascade="all, delete-orphan",
     )
     students = relationship(
-        "Student", secondary="group_students", viewonly=True,
+        "Student",
+        secondary="group_students",
+        viewonly=True,
         back_populates="groups",
     )
     lessons = relationship(
-        "Schedule", back_populates="group", cascade="all, delete-orphan",
+        "Schedule",
+        back_populates="group",
+        cascade="all, delete-orphan",
     )
 
 
@@ -83,10 +96,14 @@ class Student(Base):
     parent_name = Column(String(120), default="")
     enroll_date = Column(Date, default=date.today)
     group_links = relationship(
-        "GroupStudent", back_populates="student", cascade="all, delete-orphan",
+        "GroupStudent",
+        back_populates="student",
+        cascade="all, delete-orphan",
     )
     groups = relationship(
-        "Group", secondary="group_students", viewonly=True,
+        "Group",
+        secondary="group_students",
+        viewonly=True,
         back_populates="students",
     )
 

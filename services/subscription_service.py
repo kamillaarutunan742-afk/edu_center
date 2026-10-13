@@ -13,7 +13,9 @@ class SubscriptionService:
     """Бизнес-логика абонементов."""
 
     STATUS_LABELS = {
-        "active": "Активен", "expired": "Закончился", "cancelled": "Отменён",
+        "active": "Активен",
+        "expired": "Закончился",
+        "cancelled": "Отменён",
     }
 
     def __init__(self, session: Session) -> None:
@@ -80,15 +82,15 @@ class SubscriptionService:
             raise ValueError("Тип абонемента не найден")
         start = date.today()
         subscription = self.repo.create(
-            student_id=student_id, type_id=type_id,
+            student_id=student_id,
+            type_id=type_id,
             start_date=start,
             end_date=start + timedelta(days=90),
             total_lessons=sub_type.lessons_count,
-            remaining_lessons=sub_type.lessons_count, status="active",
+            remaining_lessons=sub_type.lessons_count,
+            status="active",
         )
-        self._notify(
-            f"Ученику {student.full_name} продан абонемент «{sub_type.name}»"
-        )
+        self._notify(f"Ученику {student.full_name} продан абонемент «{sub_type.name}»")
         return subscription
 
     def spend_lesson(self, subscription: Subscription) -> Subscription:
@@ -126,9 +128,11 @@ class SubscriptionService:
         Returns:
             Список объектов Subscription.
         """
-        return list(self.session.scalars(
-            select(Subscription).where(Subscription.student_id == student_id)
-        ))
+        return list(
+            self.session.scalars(
+                select(Subscription).where(Subscription.student_id == student_id)
+            )
+        )
 
     def get_all_subscriptions(self) -> list[Subscription]:
         """Возвращает все абонементы."""
@@ -149,10 +153,17 @@ class SubscriptionService:
             price = sub_type.price if sub_type else 0
             name = sub.student.full_name if sub.student else "—"
             type_name = sub_type.name if sub_type else "—"
-            rows.append((
-                sub.subscription_id, name, type_name,
-                sub.remaining_lessons, total, price, sub.status,
-            ))
+            rows.append(
+                (
+                    sub.subscription_id,
+                    name,
+                    type_name,
+                    sub.remaining_lessons,
+                    total,
+                    price,
+                    sub.status,
+                )
+            )
         return rows
 
     def _notify(self, message: str) -> None:

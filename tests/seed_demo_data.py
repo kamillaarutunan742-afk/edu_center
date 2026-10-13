@@ -41,32 +41,44 @@ def seed() -> None:
 
     print("Шаг 3/7: группы…")
     groups = GroupService(session)
-    g1 = groups.create_group("Английский A1", "Английский", "7-10",
-                             "beginner", 12, teacher_id=t1.teacher_id)
-    g2 = groups.create_group("Английский B2", "Английский", "15-17",
-                             "advanced", 10, teacher_id=t1.teacher_id)
-    g3 = groups.create_group("Немецкий A2", "Немецкий", "11-14",
-                             "elementary", 12, teacher_id=t2.teacher_id)
-    g4 = groups.create_group("Немецкий B1", "Немецкий", "18+",
-                             "intermediate", 10, teacher_id=t2.teacher_id)
-    g5 = groups.create_group("Французский A1", "Французский", "18+",
-                             "beginner", 12, teacher_id=t3.teacher_id)
-    g6 = groups.create_group("Испанский A2", "Испанский", "18+",
-                             "elementary", 12, teacher_id=t3.teacher_id)
+    g1 = groups.create_group(
+        "Английский A1", "Английский", "7-10", "beginner", 12, teacher_id=t1.teacher_id
+    )
+    g2 = groups.create_group(
+        "Английский B2", "Английский", "15-17", "advanced", 10, teacher_id=t1.teacher_id
+    )
+    g3 = groups.create_group(
+        "Немецкий A2", "Немецкий", "11-14", "elementary", 12, teacher_id=t2.teacher_id
+    )
+    g4 = groups.create_group(
+        "Немецкий B1", "Немецкий", "18+", "intermediate", 10, teacher_id=t2.teacher_id
+    )
+    g5 = groups.create_group(
+        "Французский A1", "Французский", "18+", "beginner", 12, teacher_id=t3.teacher_id
+    )
+    g6 = groups.create_group(
+        "Испанский A2", "Испанский", "18+", "elementary", 12, teacher_id=t3.teacher_id
+    )
 
     print("Шаг 4/7: ученики…")
     students = StudentService(session)
     names = (
-        "Иванов Иван Алексеевич", "Петров Пётр Сергеевич",
-        "Сидорова Анна Михайловна", "Козлов Дмитрий Олегович",
-        "Смирнова Екатерина Игоревна", "Морозов Алексей Владимирович",
-        "Новикова Ольга Павловна", "Фёдоров Сергей Андреевич",
+        "Иванов Иван Алексеевич",
+        "Петров Пётр Сергеевич",
+        "Сидорова Анна Михайловна",
+        "Козлов Дмитрий Олегович",
+        "Смирнова Екатерина Игоревна",
+        "Морозов Алексей Владимирович",
+        "Новикова Ольга Павловна",
+        "Фёдоров Сергей Андреевич",
     )
     created = [
         students.create_student(
-            name, phone=f"+7 900 234-56-{i:02d}",
+            name,
+            phone=f"+7 900 234-56-{i:02d}",
             direction="Английский" if i % 2 else "Немецкий",
-            level="beginner", parent_name=f"Родитель {i}",
+            level="beginner",
+            parent_name=f"Родитель {i}",
         )
         for i, name in enumerate(names, start=1)
     ]
@@ -80,8 +92,7 @@ def seed() -> None:
     type_12 = subs.create_type("12 занятий", 12, 12000)
     type_4 = subs.create_type("4 занятия", 4, 4000)
     type_16 = subs.create_type("16 занятий", 16, 16000)
-    type_map = (type_8, type_12, type_4, type_16,
-                type_8, type_12, type_8, type_4)
+    type_map = (type_8, type_12, type_4, type_16, type_8, type_12, type_8, type_4)
     remaining = (5, 3, 2, 10, 8, 4, 1, 2)
     for student, sub_type, left in zip(created, type_map, remaining):
         subscription = subs.sell_subscription(student.student_id, sub_type.type_id)
@@ -89,28 +100,50 @@ def seed() -> None:
         session.commit()
 
     pay_map = (8000, 10000, 4000, 12500, 8000, 10500, 8000, 2000)
-    methods = ("Безналичный", "Наличный", "Безналичный", "Безналичный",
-               "Наличный", "Наличный", "Безналичный", "Безналичный")
+    methods = (
+        "Безналичный",
+        "Наличный",
+        "Безналичный",
+        "Безналичный",
+        "Наличный",
+        "Наличный",
+        "Безналичный",
+        "Безналичный",
+    )
     for student, amount, method in zip(created, pay_map, methods):
-        session.add(Payment(
-            student_id=student.student_id, amount=float(amount),
-            payment_date=date.today() - timedelta(days=3),
-            method=method,
-        ))
+        session.add(
+            Payment(
+                student_id=student.student_id,
+                amount=float(amount),
+                payment_date=date.today() - timedelta(days=3),
+                method=method,
+            )
+        )
     session.commit()
 
     print("Шаг 6/7: посещаемость…")
-    statuses = ("present", "absent", "sick", "present", "present",
-                "present", "present", "absent")
+    statuses = (
+        "present",
+        "absent",
+        "sick",
+        "present",
+        "present",
+        "present",
+        "present",
+        "absent",
+    )
     for offset in range(4):
         lesson_date = date.today() - timedelta(days=offset + 1)
         for index, student in enumerate(created):
             status = statuses[(index + offset) % len(statuses)]
-            session.add(Attendance(
-                student_id=student.student_id,
-                group_id=student_groups[index].group_id,
-                lesson_date=lesson_date, status=status,
-            ))
+            session.add(
+                Attendance(
+                    student_id=student.student_id,
+                    group_id=student_groups[index].group_id,
+                    lesson_date=lesson_date,
+                    status=status,
+                )
+            )
     session.commit()
 
     print("Шаг 7/7: занятия расписания и уведомления…")
@@ -134,25 +167,44 @@ def seed() -> None:
 
     now = datetime.now()
     notes = [
-        ("Абонемент «8 занятий» Новиковой О. заканчивается (осталось 1 занятие)",
-         "subscription", 2, False),
-        ("Абонемент «4 занятия» Сидоровой А. заканчивается (осталось 2 занятия)",
-         "subscription", 15, False),
+        (
+            "Абонемент «8 занятий» Новиковой О. заканчивается (осталось 1 занятие)",
+            "subscription",
+            2,
+            False,
+        ),
+        (
+            "Абонемент «4 занятия» Сидоровой А. заканчивается (осталось 2 занятия)",
+            "subscription",
+            15,
+            False,
+        ),
         ("Петров П. имеет задолженность 2000 руб.", "payment", 60, False),
         ("Козлов Д. имеет задолженность 3500 руб.", "payment", 120, True),
-        ("Абонемент «12 занятий» Морозова А. истекает 15.10.2026",
-         "expiry", 1440, True),
-        ("Абонемент «8 занятий» Иванова И. — осталось 5 занятий",
-         "subscription", 1500, True),
+        (
+            "Абонемент «12 занятий» Морозова А. истекает 15.10.2026",
+            "expiry",
+            1440,
+            True,
+        ),
+        (
+            "Абонемент «8 занятий» Иванова И. — осталось 5 занятий",
+            "subscription",
+            1500,
+            True,
+        ),
         ("Морозов А. имеет задолженность 1500 руб.", "payment", 2880, True),
-        ("Абонемент «4 занятия» Фёдорова С. истекает 20.10.2026",
-         "expiry", 4320, True),
+        ("Абонемент «4 занятия» Фёдорова С. истекает 20.10.2026", "expiry", 4320, True),
     ]
     for message, note_type, minutes_ago, is_read in notes:
-        session.add(Notification(
-            message=message, type=note_type, is_read=is_read,
-            created_at=now - timedelta(minutes=minutes_ago),
-        ))
+        session.add(
+            Notification(
+                message=message,
+                type=note_type,
+                is_read=is_read,
+                created_at=now - timedelta(minutes=minutes_ago),
+            )
+        )
     session.commit()
     session.close()
     print("Демо-данные созданы: admin/admin, manager/manager")
@@ -163,6 +215,7 @@ if __name__ == "__main__":
         seed()
     except Exception:
         import traceback
+
         traceback.print_exc()
         print("СИД УПАЛ — база может быть заполнена не полностью")
         raise

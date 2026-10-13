@@ -48,15 +48,21 @@ class ReportsView:
         self.end_entry = self._date_field(controls, today)
 
         ttk.Button(
-            controls, text="Сформировать", style="Primary.TButton",
+            controls,
+            text="Сформировать",
+            style="Primary.TButton",
             command=self._on_build,
         ).pack(side=tk.LEFT, padx=(14, 6))
         ttk.Button(
-            controls, text="Экспорт PDF", style="Secondary.TButton",
+            controls,
+            text="Экспорт PDF",
+            style="Secondary.TButton",
             command=self._export_pdf,
         ).pack(side=tk.LEFT, padx=6)
         ttk.Button(
-            controls, text="Экспорт Excel", style="Secondary.TButton",
+            controls,
+            text="Экспорт Excel",
+            style="Secondary.TButton",
             command=self._export_excel,
         ).pack(side=tk.LEFT)
 
@@ -106,14 +112,13 @@ class ReportsView:
         end = self._parse_date(self.end_entry.get())
         if start is None or end is None or start > end:
             messagebox.showerror(
-                "Отчёты", "Даты должны быть в формате дд.мм.гггг, "
-                "начало — не позже конца", parent=self.frame,
+                "Отчёты",
+                "Даты должны быть в формате дд.мм.гггг, " "начало — не позже конца",
+                parent=self.frame,
             )
             return
 
-        headers, rows = self.service.build_report(
-            self.kind_combo.get(), start, end
-        )
+        headers, rows = self.service.build_report(self.kind_combo.get(), start, end)
         self.current_headers, self.current_rows = headers, rows
 
         columns = tuple(f"col{i}" for i in range(len(headers)))
@@ -132,28 +137,34 @@ class ReportsView:
     def _export_excel(self) -> None:
         """Экспортирует текущий отчёт в Excel (или CSV при отсутствии openpyxl)."""
         if not self.current_rows:
-            messagebox.showinfo("Отчёты", "Сначала сформируйте отчёт", parent=self.frame)
+            messagebox.showinfo(
+                "Отчёты", "Сначала сформируйте отчёт", parent=self.frame
+            )
             return
         try:
             from openpyxl import Workbook
         except ImportError:
             path = filedialog.asksaveasfilename(
-                defaultextension=".csv", filetypes=[("CSV", "*.csv")],
+                defaultextension=".csv",
+                filetypes=[("CSV", "*.csv")],
                 parent=self.frame,
             )
             if not path:
                 return
             import csv
+
             with open(path, "w", newline="", encoding="utf-8-sig") as file:
                 csv.writer(file).writerows([self.current_headers, *self.current_rows])
             messagebox.showinfo(
                 "Отчёты",
                 "Библиотека openpyxl не установлена (pip install openpyxl), "
-                "отчёт сохранён в CSV", parent=self.frame,
+                "отчёт сохранён в CSV",
+                parent=self.frame,
             )
             return
         path = filedialog.asksaveasfilename(
-            defaultextension=".xlsx", filetypes=[("Excel", "*.xlsx")],
+            defaultextension=".xlsx",
+            filetypes=[("Excel", "*.xlsx")],
             parent=self.frame,
         )
         if not path:
@@ -169,10 +180,13 @@ class ReportsView:
     def _export_pdf(self) -> None:
         """Экспортирует отчёт в PDF (или TXT при отсутствии reportlab)."""
         if not self.current_rows:
-            messagebox.showinfo("Отчёты", "Сначала сформируйте отчёт", parent=self.frame)
+            messagebox.showinfo(
+                "Отчёты", "Сначала сформируйте отчёт", parent=self.frame
+            )
             return
         path = filedialog.asksaveasfilename(
-            defaultextension=".pdf", filetypes=[("PDF", "*.pdf"), ("Текст", "*.txt")],
+            defaultextension=".pdf",
+            filetypes=[("PDF", "*.pdf"), ("Текст", "*.txt")],
             parent=self.frame,
         )
         if not path:
@@ -183,20 +197,22 @@ class ReportsView:
             from reportlab.pdfbase.ttfonts import TTFont
             from reportlab.platypus import SimpleDocTemplate, Table, TableStyle
 
-            pdfmetrics.registerFont(
-                TTFont("DejaVu", "C:/Windows/Fonts/DejaVuSans.ttf")
-            )
+            pdfmetrics.registerFont(TTFont("DejaVu", "C:/Windows/Fonts/DejaVuSans.ttf"))
             document = SimpleDocTemplate(path, pagesize=A4)
             data = [list(self.current_headers)] + [
                 [str(value) for value in row] for row in self.current_rows
             ]
             table = Table(data)
-            table.setStyle(TableStyle([
-                ("FONTNAME", (0, 0), (-1, -1), "DejaVu"),
-                ("FONTSIZE", (0, 0), (-1, -1), 9),
-                ("BACKGROUND", (0, 0), (-1, 0), "#eceef2"),
-                ("GRID", (0, 0), (-1, -1), 0.4, "#c9ced8"),
-            ]))
+            table.setStyle(
+                TableStyle(
+                    [
+                        ("FONTNAME", (0, 0), (-1, -1), "DejaVu"),
+                        ("FONTSIZE", (0, 0), (-1, -1), 9),
+                        ("BACKGROUND", (0, 0), (-1, 0), "#eceef2"),
+                        ("GRID", (0, 0), (-1, -1), 0.4, "#c9ced8"),
+                    ]
+                )
+            )
             document.build([table])
             messagebox.showinfo("Отчёты", f"Сохранено: {path}", parent=self.frame)
         except Exception:
@@ -205,6 +221,7 @@ class ReportsView:
                 for row in self.current_rows:
                     file.write("\t".join(str(value) for value in row) + "\n")
             messagebox.showinfo(
-                "Отчёты", "PDF-библиотека недоступна, отчёт сохранён как TXT",
+                "Отчёты",
+                "PDF-библиотека недоступна, отчёт сохранён как TXT",
                 parent=self.frame,
             )

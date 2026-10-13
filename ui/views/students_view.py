@@ -13,8 +13,10 @@ from ui.dialogs.form_dialog import FormDialog
 from ui.theme import make_header
 
 LEVEL_LABELS = {
-    "beginner": "Начинающий", "elementary": "Элементарный",
-    "intermediate": "Средний", "advanced": "Продвинутый",
+    "beginner": "Начинающий",
+    "elementary": "Элементарный",
+    "intermediate": "Средний",
+    "advanced": "Продвинутый",
 }
 DIRECTION_OPTIONS = tuple(
     (d, d) for d in ("Английский", "Немецкий", "Французский", "Испанский")
@@ -52,19 +54,22 @@ class StudentsView:
         card.pack(fill=tk.BOTH, expand=True, pady=(14, 0))
 
         self.table = ttk.Treeview(
-            card, show="headings", selectmode="browse",
+            card,
+            show="headings",
+            selectmode="browse",
             columns=("id", "fio", "phone", "direction", "level", "parent"),
         )
         for column, text, width in (
-            ("id", "№", 50), ("fio", "ФИО", 220), ("phone", "Телефон", 140),
-            ("direction", "Направление", 110), ("level", "Уровень", 110),
+            ("id", "№", 50),
+            ("fio", "ФИО", 220),
+            ("phone", "Телефон", 140),
+            ("direction", "Направление", 110),
+            ("level", "Уровень", 110),
             ("parent", "Родитель", 160),
         ):
             self.table.heading(column, text=text)
             self.table.column(column, width=width, anchor=tk.W)
-        scrollbar = ttk.Scrollbar(
-            card, orient=tk.VERTICAL, command=self.table.yview
-        )
+        scrollbar = ttk.Scrollbar(card, orient=tk.VERTICAL, command=self.table.yview)
         self.table.configure(yscrollcommand=scrollbar.set)
         self.table.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
@@ -72,15 +77,21 @@ class StudentsView:
         buttons = tk.Frame(card, bg="white")
         buttons.pack(fill=tk.X, pady=(10, 0))
         ttk.Button(
-            buttons, text="✏ Редактировать", style="Secondary.TButton",
+            buttons,
+            text="✏ Редактировать",
+            style="Secondary.TButton",
             command=self._on_edit,
         ).pack(side=tk.LEFT)
         ttk.Button(
-            buttons, text="🗑 Удалить", style="Secondary.TButton",
+            buttons,
+            text="🗑 Удалить",
+            style="Secondary.TButton",
             command=self._on_delete,
         ).pack(side=tk.LEFT, padx=8)
         ttk.Button(
-            buttons, text="👥 Зачислить в группу", style="Secondary.TButton",
+            buttons,
+            text="👥 Зачислить в группу",
+            style="Secondary.TButton",
             command=self._on_enroll,
         ).pack(side=tk.LEFT)
 
@@ -91,13 +102,18 @@ class StudentsView:
         self.table.delete(*self.table.get_children())
         for student in self.session.scalars(select(Student)):
             level = getattr(student, "level", "") or ""
-            self.table.insert("", tk.END, values=(
-                student.student_id, student.full_name,
-                getattr(student, "phone", "") or "—",
-                getattr(student, "direction", "") or "—",
-                LEVEL_LABELS.get(level, level or "—"),
-                getattr(student, "parent_name", "") or "—",
-            ))
+            self.table.insert(
+                "",
+                tk.END,
+                values=(
+                    student.student_id,
+                    student.full_name,
+                    getattr(student, "phone", "") or "—",
+                    getattr(student, "direction", "") or "—",
+                    LEVEL_LABELS.get(level, level or "—"),
+                    getattr(student, "parent_name", "") or "—",
+                ),
+            )
 
     def _selected_student(self) -> Student | None:
         """Возвращает выбранного ученика или None с подсказкой."""
@@ -107,7 +123,9 @@ class StudentsView:
                 "Ученики", "Выберите ученика в таблице", parent=self.frame
             )
             return None
-        return self.session.get(Student, int(self.table.item(selection[0], "values")[0]))
+        return self.session.get(
+            Student, int(self.table.item(selection[0], "values")[0])
+        )
 
     def _on_add(self) -> None:
         """Открывает форму добавления ученика."""
@@ -118,8 +136,10 @@ class StudentsView:
         data = dialog.result
         try:
             self.service.create_student(
-                data["full_name"], phone=data["phone"],
-                direction=data["direction"], level=data["level"],
+                data["full_name"],
+                phone=data["phone"],
+                direction=data["direction"],
+                level=data["level"],
                 parent_name=data["parent_name"],
             )
         except Exception as error:

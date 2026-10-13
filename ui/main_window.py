@@ -7,7 +7,12 @@ from tkinter import messagebox, ttk
 
 from database.models import User
 from ui.theme import (
-    BG_CONTENT, BG_SIDEBAR, FONT_BASE, SIDEBAR_ACTIVE, TEXT_MUTED, apply_theme,
+    BG_CONTENT,
+    BG_SIDEBAR,
+    FONT_BASE,
+    SIDEBAR_ACTIVE,
+    TEXT_MUTED,
+    apply_theme,
 )
 from ui.views.dashboard_view import DashboardView
 from ui.views.students_view import StudentsView
@@ -22,16 +27,27 @@ from ui.views.reports_view import ReportsView
 from ui.dialogs.password_dialog import ChangePasswordDialog
 
 MENU = (
-    ("Дашборд", "🏠"), ("Ученики", "👥"), ("Группы", "📚"),
-    ("Абонементы", "🎫"), ("Посещаемость", "✅"), ("Расписание", "🗓"),
-    ("Финансы", "💰"), ("Отчёты", "📊"), ("Уведомления", "🔔"),
+    ("Дашборд", "🏠"),
+    ("Ученики", "👥"),
+    ("Группы", "📚"),
+    ("Абонементы", "🎫"),
+    ("Посещаемость", "✅"),
+    ("Расписание", "🗓"),
+    ("Финансы", "💰"),
+    ("Отчёты", "📊"),
+    ("Уведомления", "🔔"),
 )
 
 SECTIONS = {
-    "Дашборд": DashboardView, "Ученики": StudentsView, "Группы": GroupsView,
-    "Абонементы": SubscriptionsView, "Посещаемость": AttendanceView,
-    "Расписание": ScheduleView, "Финансы": FinanceView,
-    "Отчёты": ReportsView, "Уведомления": NotificationsView,
+    "Дашборд": DashboardView,
+    "Ученики": StudentsView,
+    "Группы": GroupsView,
+    "Абонементы": SubscriptionsView,
+    "Посещаемость": AttendanceView,
+    "Расписание": ScheduleView,
+    "Финансы": FinanceView,
+    "Отчёты": ReportsView,
+    "Уведомления": NotificationsView,
 }
 
 ROLE_SECTIONS = {
@@ -71,17 +87,30 @@ class MainWindow:
         sidebar.pack_propagate(False)
 
         tk.Label(
-            sidebar, text="EduCenter", bg=BG_SIDEBAR, fg="white",
-            font=("Segoe UI", 14, "bold"), pady=16,
+            sidebar,
+            text="EduCenter",
+            bg=BG_SIDEBAR,
+            fg="white",
+            font=("Segoe UI", 14, "bold"),
+            pady=16,
         ).pack(fill=tk.X, padx=10)
 
         for name, icon in MENU:
             if self.role_sections is not None and name not in self.role_sections:
                 continue
             button = tk.Button(
-                sidebar, text=f" {icon}  {name}", anchor="w", relief=tk.FLAT,
-                bg=BG_SIDEBAR, fg="#c7cfdd", font=FONT_BASE, padx=14, pady=9,
-                bd=0, cursor="hand2", activebackground=SIDEBAR_ACTIVE,
+                sidebar,
+                text=f" {icon}  {name}",
+                anchor="w",
+                relief=tk.FLAT,
+                bg=BG_SIDEBAR,
+                fg="#c7cfdd",
+                font=FONT_BASE,
+                padx=14,
+                pady=9,
+                bd=0,
+                cursor="hand2",
+                activebackground=SIDEBAR_ACTIVE,
                 activeforeground="white",
                 command=lambda n=name: self._show_section(n),
             )
@@ -89,16 +118,36 @@ class MainWindow:
             self.menu_buttons[name] = button
 
         tk.Button(
-            sidebar, text=" 🔑  Сменить пароль", anchor="w", relief=tk.FLAT,
-            bg=BG_SIDEBAR, fg=TEXT_MUTED, font=FONT_BASE, padx=14, pady=6,
-            bd=0, cursor="hand2", activebackground=BG_SIDEBAR,
-            activeforeground="white", command=self._on_change_password,
+            sidebar,
+            text=" 🔑  Сменить пароль",
+            anchor="w",
+            relief=tk.FLAT,
+            bg=BG_SIDEBAR,
+            fg=TEXT_MUTED,
+            font=FONT_BASE,
+            padx=14,
+            pady=6,
+            bd=0,
+            cursor="hand2",
+            activebackground=BG_SIDEBAR,
+            activeforeground="white",
+            command=self._on_change_password,
         ).pack(side=tk.BOTTOM, fill=tk.X, padx=8)
         tk.Button(
-            sidebar, text=" ←  Выйти", anchor="w", relief=tk.FLAT,
-            bg=BG_SIDEBAR, fg=TEXT_MUTED, font=FONT_BASE, padx=14, pady=8,
-            bd=0, cursor="hand2", activebackground=BG_SIDEBAR,
-            activeforeground="white", command=self._on_logout,
+            sidebar,
+            text=" ←  Выйти",
+            anchor="w",
+            relief=tk.FLAT,
+            bg=BG_SIDEBAR,
+            fg=TEXT_MUTED,
+            font=FONT_BASE,
+            padx=14,
+            pady=8,
+            bd=0,
+            cursor="hand2",
+            activebackground=BG_SIDEBAR,
+            activeforeground="white",
+            command=self._on_logout,
         ).pack(side=tk.BOTTOM, fill=tk.X, padx=8, pady=(0, 10))
 
         header = tk.Frame(self.root, bg="white", height=58)
@@ -106,17 +155,25 @@ class MainWindow:
         header.pack_propagate(False)
         tk.Frame(header, bg="#eceef2", height=1).pack(side=tk.BOTTOM, fill=tk.X)
         self.header_label = tk.Label(
-            header, text="Дашборд", bg="white", fg="#1a1f33",
+            header,
+            text="Дашборд",
+            bg="white",
+            fg="#1a1f33",
             font=("Segoe UI", 14, "bold"),
         )
         self.header_label.pack(side=tk.LEFT, padx=22)
         ttk.Button(
-            header, text="🔄 Обновить", style="Secondary.TButton",
+            header,
+            text="🔄 Обновить",
+            style="Secondary.TButton",
             command=self._refresh_section,
         ).pack(side=tk.RIGHT, padx=16, pady=12)
         tk.Label(
-            header, text=f"{self.user.full_name} ({self.user.role})",
-            bg="white", fg="#6b7590", font=("Segoe UI", 9),
+            header,
+            text=f"{self.user.full_name} ({self.user.role})",
+            bg="white",
+            fg="#6b7590",
+            font=("Segoe UI", 9),
         ).pack(side=tk.RIGHT, padx=8)
 
         self.content = tk.Frame(self.root, bg=BG_CONTENT)
@@ -157,7 +214,8 @@ class MainWindow:
         self.root.wait_window(dialog.top)
         if dialog.result:
             messagebox.showinfo(
-                "Профиль", "Пароль обновлён, используйте его при следующем входе",
+                "Профиль",
+                "Пароль обновлён, используйте его при следующем входе",
                 parent=self.root,
             )
 

@@ -36,9 +36,10 @@ class FinanceView:
         stats.pack(fill=tk.X, pady=(14, 0))
         month_start = date.today().replace(day=1)
         revenue = self.service.get_revenue(month_start, date.today())
-        total_paid = self.session.scalar(
-            select(func.coalesce(func.sum(Payment.amount), 0.0))
-        ) or 0.0
+        total_paid = (
+            self.session.scalar(select(func.coalesce(func.sum(Payment.amount), 0.0)))
+            or 0.0
+        )
         debt_total = sum(owed for _, _, owed in self._debts())
         for title, value in (
             ("Выручка за месяц", f"{revenue:.0f} ₽"),
@@ -47,15 +48,23 @@ class FinanceView:
         ):
             card = tk.Frame(stats, bg="white", padx=16, pady=12)
             card.pack(side=tk.LEFT, padx=(0, 12), fill=tk.X, expand=True)
-            tk.Label(card, text=title, bg="white", fg="#6b7590",
-                     font=("Segoe UI", 9)).pack(anchor="w")
-            tk.Label(card, text=value, bg="white", fg="#1a1f33",
-                     font=("Segoe UI", 15, "bold")).pack(anchor="w")
+            tk.Label(
+                card, text=title, bg="white", fg="#6b7590", font=("Segoe UI", 9)
+            ).pack(anchor="w")
+            tk.Label(
+                card,
+                text=value,
+                bg="white",
+                fg="#1a1f33",
+                font=("Segoe UI", 15, "bold"),
+            ).pack(anchor="w")
 
         actions = tk.Frame(self.frame, bg="#f5f6fa")
         actions.pack(fill=tk.X, pady=(12, 0))
         ttk.Button(
-            actions, text="Оплатить задолженность", style="Primary.TButton",
+            actions,
+            text="Оплатить задолженность",
+            style="Primary.TButton",
             command=self._on_pay_debt,
         ).pack(side=tk.LEFT)
 
@@ -63,12 +72,17 @@ class FinanceView:
         card.pack(fill=tk.BOTH, expand=True, pady=(12, 0))
 
         self.table = ttk.Treeview(
-            card, show="headings", selectmode="browse",
+            card,
+            show="headings",
+            selectmode="browse",
             columns=("id", "date", "student", "sub", "amount", "method"),
         )
         for column, text, width in (
-            ("id", "№", 50), ("date", "Дата", 110), ("student", "Ученик", 200),
-            ("sub", "Абонемент", 130), ("amount", "Сумма", 100),
+            ("id", "№", 50),
+            ("date", "Дата", 110),
+            ("student", "Ученик", 200),
+            ("sub", "Абонемент", 130),
+            ("amount", "Сумма", 100),
             ("method", "Способ", 120),
         ):
             self.table.heading(column, text=text)
@@ -89,9 +103,17 @@ class FinanceView:
             payment_id, date_text, student, sub_name, amount, method = row
             tag = "cash" if method == "Наличный" else "cashless"
             self.table.insert(
-                "", tk.END, tags=(tag,),
-                values=(payment_id, date_text, student, sub_name,
-                        f"{amount:.0f} ₽", method),
+                "",
+                tk.END,
+                tags=(tag,),
+                values=(
+                    payment_id,
+                    date_text,
+                    student,
+                    sub_name,
+                    f"{amount:.0f} ₽",
+                    method,
+                ),
             )
 
     def _debts(self) -> list[tuple[int, str, float]]:
@@ -100,15 +122,19 @@ class FinanceView:
         Returns:
             Список кортежей (student_id, ФИО, сумма долга).
         """
-        subs = list(self.session.scalars(
-            select(Subscription).where(Subscription.status == "active")
-        ))
-        paid = dict(self.session.execute(
-            select(
-                Payment.student_id,
-                func.coalesce(func.sum(Payment.amount), 0.0),
-            ).group_by(Payment.student_id)
-        ).all())
+        subs = list(
+            self.session.scalars(
+                select(Subscription).where(Subscription.status == "active")
+            )
+        )
+        paid = dict(
+            self.session.execute(
+                select(
+                    Payment.student_id,
+                    func.coalesce(func.sum(Payment.amount), 0.0),
+                ).group_by(Payment.student_id)
+            ).all()
+        )
         billed: dict[int, float] = {}
         for sub in subs:
             price = sub.subscription_type.price if sub.subscription_type else 0
@@ -144,20 +170,31 @@ class FinanceView:
         try:
             amount = float(str(amount_text).replace(",", "."))
         except (TypeError, ValueError):
-            messagebox.showerror("Финансы", "Сумма должна быть числом", parent=self.frame)
+            messagebox.showerror(
+                "Финансы", "Сумма должна быть числом", parent=self.frame
+            )
             return
         if amount <= 0:
-            messagebox.showerror("Финансы", "Сумма должна быть больше нуля", parent=self.frame)
+            messagebox.showerror(
+                "Финансы", "Сумма должна быть больше нуля", parent=self.frame
+            )
             return
         student = self.session.get(Student, student_id)
-        self.session.add(Payment(
-            student_id=student_id, amount=amount,
-            payment_date=date.today(), method=method,
-        ))
-        self.session.add(Notification(
-            message=f"Поступила оплата {amount:.0f} руб. от {student.full_name}",
-            type="payment", created_at=date.today(),
-        ))
+        self.session.add(
+            Payment(
+                student_id=student_id,
+                amount=amount,
+                payment_date=date.today(),
+                method=method,
+            )
+        )
+        self.session.add(
+            Notification(
+                message=f"Поступила оплата {amount:.0f} руб. от {student.full_name}",
+                type="payment",
+                created_at=date.today(),
+            )
+        )
         self.session.commit()
         self.refresh()
 
@@ -165,7 +202,9 @@ class FinanceView:
         """Открывает форму новой оплаты."""
         options = self._student_options()
         if not options:
-            messagebox.showinfo("Финансы", "Сначала добавьте учеников", parent=self.frame)
+            messagebox.showinfo(
+                "Финансы", "Сначала добавьте учеников", parent=self.frame
+            )
             return
         fields = [
             ("student_id", "Ученик", "combo", options),
@@ -193,8 +232,9 @@ class FinanceView:
             (student_id, f"{name} — долг {owed:.0f} руб.")
             for student_id, name, owed in debts
         ]
-        dialog = ChoiceDialog(self.frame, "Оплата задолженности", options,
-                              "Выберите ученика:")
+        dialog = ChoiceDialog(
+            self.frame, "Оплата задолженности", options, "Выберите ученика:"
+        )
         self.frame.wait_window(dialog.top)
         if dialog.result is None:
             return
@@ -206,7 +246,9 @@ class FinanceView:
             ("method", "Способ", "combo", METHOD_OPTIONS),
         ]
         pay_dialog = FormDialog(
-            self.frame, f"Оплата долга — {name}", fields,
+            self.frame,
+            f"Оплата долга — {name}",
+            fields,
             {"amount": f"{owed:.0f}"},
         )
         self.frame.wait_window(pay_dialog.top)
@@ -214,4 +256,3 @@ class FinanceView:
             return
         data = pay_dialog.result
         self._create_payment(student_id, data["amount"], data["method"])
-

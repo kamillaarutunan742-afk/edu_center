@@ -9,8 +9,10 @@ from services.notification_service import NotificationService
 from ui.theme import make_header
 
 TYPE_COLORS = {
-    "subscription": "#3b82f6", "payment": "#3b82f6",
-    "expiry": "#8a93a5", "info": "#8a93a5",
+    "subscription": "#3b82f6",
+    "payment": "#3b82f6",
+    "expiry": "#8a93a5",
+    "info": "#8a93a5",
 }
 
 
@@ -35,8 +37,11 @@ def time_ago(value: datetime) -> str:
         return f"{max(int(seconds // 60), 1)} мин назад"
     if seconds < 86400:
         hours = int(seconds // 3600)
-        return f"{hours} час{'а' if 2 <= hours <= 4 else ''} назад" \
-            if hours > 1 else "1 час назад"
+        return (
+            f"{hours} час{'а' if 2 <= hours <= 4 else ''} назад"
+            if hours > 1
+            else "1 час назад"
+        )
     days = int(seconds // 86400)
     if days == 1:
         return "Вчера"
@@ -60,8 +65,10 @@ class NotificationsView:
         self.frame.pack(fill=tk.BOTH, expand=True)
 
         make_header(
-            self.frame, "Уведомления",
-            "Отметить все прочитанными", self._on_mark_all,
+            self.frame,
+            "Уведомления",
+            "Отметить все прочитанными",
+            self._on_mark_all,
         )
 
         self.list_frame = tk.Frame(self.frame, bg="white", padx=16, pady=12)
@@ -75,7 +82,9 @@ class NotificationsView:
         items = self.service.get_all()
         if not items:
             tk.Label(
-                self.list_frame, text="Уведомлений нет 🔕", bg="white",
+                self.list_frame,
+                text="Уведомлений нет 🔕",
+                bg="white",
                 fg="#6b7590",
             ).pack(anchor="w", pady=8)
             return
@@ -92,28 +101,43 @@ class NotificationsView:
         if item.is_read:
             dot_color = "#d7dbe2"
         row = tk.Frame(
-            self.list_frame, bg="white", pady=10,
-            highlightthickness=1, highlightbackground="#eceef2",
+            self.list_frame,
+            bg="white",
+            pady=10,
+            highlightthickness=1,
+            highlightbackground="#eceef2",
         )
         row.pack(fill=tk.X, pady=2)
 
-        tk.Canvas(row, width=10, height=10, bg="white",
-                  highlightthickness=0).pack(side=tk.LEFT, padx=(4, 8))
+        tk.Canvas(row, width=10, height=10, bg="white", highlightthickness=0).pack(
+            side=tk.LEFT, padx=(4, 8)
+        )
         row.winfo_children()[-1].create_oval(1, 1, 9, 9, fill=dot_color, outline="")
 
         type_text = NotificationService.TYPE_LABELS.get(item.type, "Информация")
         fg = "#8a93a5" if item.is_read else "#1a1f33"
         tk.Label(
-            row, text=type_text, bg="white", fg=fg,
-            font=("Segoe UI", 9), width=18, anchor="w",
+            row,
+            text=type_text,
+            bg="white",
+            fg=fg,
+            font=("Segoe UI", 9),
+            width=18,
+            anchor="w",
         ).pack(side=tk.LEFT)
         tk.Label(
-            row, text=item.message, bg="white", fg=fg,
+            row,
+            text=item.message,
+            bg="white",
+            fg=fg,
             font=("Segoe UI", 9, "bold" if not item.is_read else "normal"),
             anchor="w",
         ).pack(side=tk.LEFT, fill=tk.X, expand=True)
         tk.Label(
-            row, text=time_ago(item.created_at), bg="white", fg="#8a93a5",
+            row,
+            text=time_ago(item.created_at),
+            bg="white",
+            fg="#8a93a5",
             font=("Segoe UI", 8),
         ).pack(side=tk.RIGHT, padx=6)
 
@@ -136,6 +160,7 @@ class NotificationsView:
         self.service.mark_all_read()
         self.refresh()
         messagebox.showinfo(
-            "Уведомления", "Все уведомления отмечены прочитанными",
+            "Уведомления",
+            "Все уведомления отмечены прочитанными",
             parent=self.frame,
         )

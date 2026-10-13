@@ -26,17 +26,22 @@ class NotificationService:
 
     def get_all(self) -> list[Notification]:
         """Возвращает уведомления: новые сверху."""
-        return list(self.session.scalars(
-            select(Notification).order_by(Notification.created_at.desc())
-        ))
+        return list(
+            self.session.scalars(
+                select(Notification).order_by(Notification.created_at.desc())
+            )
+        )
 
     def unread_count(self) -> int:
         """Считает непрочитанные уведомления."""
-        return self.session.scalar(
-            select(func.count(Notification.notification_id)).where(
-                Notification.is_read == False  # noqa: E712
+        return (
+            self.session.scalar(
+                select(func.count(Notification.notification_id)).where(
+                    Notification.is_read == False  # noqa: E712
+                )
             )
-        ) or 0
+            or 0
+        )
 
     def mark_read(self, notification: Notification) -> None:
         """Отмечает одно уведомление прочитанным."""

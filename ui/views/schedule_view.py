@@ -38,12 +38,17 @@ class ScheduleView:
         card.pack(fill=tk.BOTH, expand=True, pady=(14, 0))
 
         self.table = ttk.Treeview(
-            card, show="headings", selectmode="browse",
+            card,
+            show="headings",
+            selectmode="browse",
             columns=("id", "day", "time", "group", "teacher", "room"),
         )
         for column, text, width in (
-            ("id", "№", 50), ("day", "День", 130), ("time", "Время", 110),
-            ("group", "Группа", 170), ("teacher", "Преподаватель", 200),
+            ("id", "№", 50),
+            ("day", "День", 130),
+            ("time", "Время", 110),
+            ("group", "Группа", 170),
+            ("teacher", "Преподаватель", 200),
             ("room", "Кабинет", 90),
         ):
             self.table.heading(column, text=text)
@@ -57,11 +62,15 @@ class ScheduleView:
             buttons = tk.Frame(card, bg="white")
             buttons.pack(fill=tk.X, pady=(10, 0))
             ttk.Button(
-                buttons, text="✏ Редактировать", style="Secondary.TButton",
+                buttons,
+                text="✏ Редактировать",
+                style="Secondary.TButton",
                 command=self._on_edit,
             ).pack(side=tk.LEFT)
             ttk.Button(
-                buttons, text="🗑 Удалить", style="Secondary.TButton",
+                buttons,
+                text="🗑 Удалить",
+                style="Secondary.TButton",
                 command=self._on_delete,
             ).pack(side=tk.LEFT, padx=8)
 
@@ -125,8 +134,11 @@ class ScheduleView:
             return
         try:
             self.service.create_lesson(
-                data["group_id"], data["day"], data["start"],
-                end=data["end"], room=data["room"],
+                data["group_id"],
+                data["day"],
+                data["start"],
+                end=data["end"],
+                room=data["room"],
             )
         except ValueError as error:
             messagebox.showwarning("Конфликт расписания", str(error), parent=self.frame)
@@ -146,7 +158,8 @@ class ScheduleView:
             "start": str(lesson.start_time),
             "end": str(getattr(lesson, "end_time", "") or ""),
             "room": getattr(lesson, "room", None)
-            or getattr(lesson, "cabinet", None) or "",
+            or getattr(lesson, "cabinet", None)
+            or "",
         }
         dialog = FormDialog(
             self.frame, "Редактирование занятия", self._lesson_fields(), initial
@@ -158,8 +171,11 @@ class ScheduleView:
         try:
             self.service.delete(lesson)
             self.service.create_lesson(
-                data["group_id"], data["day"], data["start"],
-                end=data["end"], room=data["room"],
+                data["group_id"],
+                data["day"],
+                data["start"],
+                end=data["end"],
+                room=data["room"],
             )
         except ValueError as error:
             messagebox.showwarning("Конфликт расписания", str(error), parent=self.frame)

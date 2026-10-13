@@ -43,10 +43,12 @@ class DashboardView:
         """
         card = tk.Frame(parent, bg="white", padx=16, pady=12)
         card.pack(side=tk.LEFT, padx=(0, 12), fill=tk.X, expand=True)
-        tk.Label(card, text=title, bg="white", fg="#6b7590",
-                 font=("Segoe UI", 9)).pack(anchor="w")
-        tk.Label(card, text=value, bg="white", fg="#1a1f33",
-                 font=("Segoe UI", 15, "bold")).pack(anchor="w")
+        tk.Label(card, text=title, bg="white", fg="#6b7590", font=("Segoe UI", 9)).pack(
+            anchor="w"
+        )
+        tk.Label(
+            card, text=value, bg="white", fg="#1a1f33", font=("Segoe UI", 15, "bold")
+        ).pack(anchor="w")
 
     def _build_manager(self) -> None:
         """Собирает дашборд менеджера."""
@@ -60,31 +62,49 @@ class DashboardView:
 
         lessons_card = tk.Frame(columns, bg="white", padx=16, pady=14)
         lessons_card.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        tk.Label(lessons_card, text="Ближайшие занятия", bg="white", fg="#1a1f33",
-                 font=("Segoe UI", 11, "bold")).pack(anchor="w")
+        tk.Label(
+            lessons_card,
+            text="Ближайшие занятия",
+            bg="white",
+            fg="#1a1f33",
+            font=("Segoe UI", 11, "bold"),
+        ).pack(anchor="w")
         lessons = self.service.get_upcoming_lessons()
         if not lessons:
-            tk.Label(lessons_card,
-                     text="Занятий пока нет — добавьте их в разделе «Расписание»",
-                     bg="white", fg="#6b7590").pack(anchor="w", pady=6)
+            tk.Label(
+                lessons_card,
+                text="Занятий пока нет — добавьте их в разделе «Расписание»",
+                bg="white",
+                fg="#6b7590",
+            ).pack(anchor="w", pady=6)
         for day, time_text, name in lessons[:8]:
             tk.Label(
-                lessons_card, text=f" {day}, {time_text} — {name}",
-                bg="white", fg="#1a1f33", font=("Segoe UI", 10),
+                lessons_card,
+                text=f" {day}, {time_text} — {name}",
+                bg="white",
+                fg="#1a1f33",
+                font=("Segoe UI", 10),
             ).pack(anchor="w", pady=2)
 
         warn_card = tk.Frame(columns, bg="white", padx=16, pady=14)
         warn_card.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        tk.Label(warn_card, text="Требует внимания", bg="white", fg="#1a1f33",
-                 font=("Segoe UI", 11, "bold")).pack(anchor="w")
+        tk.Label(
+            warn_card,
+            text="Требует внимания",
+            bg="white",
+            fg="#1a1f33",
+            font=("Segoe UI", 11, "bold"),
+        ).pack(anchor="w")
         items = self.service.get_attention_items()
         if not items:
-            tk.Label(warn_card, text="Всё в порядке ✅", bg="white",
-                     fg="#6b7590").pack(anchor="w", pady=6)
+            tk.Label(warn_card, text="Всё в порядке ✅", bg="white", fg="#6b7590").pack(
+                anchor="w", pady=6
+            )
         for kind, text in items[:8]:
             color = "#b45309" if kind == "warn" else "#b91c1c"
-            tk.Label(warn_card, text=f"• {text}", bg="white", fg=color,
-                     font=("Segoe UI", 10)).pack(anchor="w", pady=2)
+            tk.Label(
+                warn_card, text=f"• {text}", bg="white", fg=color, font=("Segoe UI", 10)
+            ).pack(anchor="w", pady=2)
 
     def _build_student(self) -> None:
         """Собирает дашборд ученика: его абонементы и расписание недели."""
@@ -99,9 +119,13 @@ class DashboardView:
         )
         unread_note = "есть" if unread is not None else "нет"
         if student is not None:
-            subs = list(self.session.scalars(
-                select(Subscription).where(Subscription.student_id == student.student_id)
-            ))
+            subs = list(
+                self.session.scalars(
+                    select(Subscription).where(
+                        Subscription.student_id == student.student_id
+                    )
+                )
+            )
             active = [s for s in subs if s.status == "active"]
             total_left = sum(s.remaining_lessons for s in active)
             self._card(stats, "Активных абонементов", str(len(active)))
@@ -113,47 +137,69 @@ class DashboardView:
 
         sub_card = tk.Frame(self.frame, bg="white", padx=16, pady=14)
         sub_card.pack(fill=tk.X, pady=(14, 0))
-        tk.Label(sub_card, text="Мои абонементы", bg="white", fg="#1a1f33",
-                 font=("Segoe UI", 11, "bold")).pack(anchor="w")
+        tk.Label(
+            sub_card,
+            text="Мои абонементы",
+            bg="white",
+            fg="#1a1f33",
+            font=("Segoe UI", 11, "bold"),
+        ).pack(anchor="w")
         if student is None:
             tk.Label(
                 sub_card,
                 text="Профиль не найден. Попросите администратора зарегистрировать "
-                "вас под ФИО ученика", bg="white", fg="#6b7590",
+                "вас под ФИО ученика",
+                bg="white",
+                fg="#6b7590",
                 justify=tk.LEFT,
             ).pack(anchor="w", pady=6)
         else:
-            subs = list(self.session.scalars(
-                select(Subscription).where(Subscription.student_id == student.student_id)
-            ))
+            subs = list(
+                self.session.scalars(
+                    select(Subscription).where(
+                        Subscription.student_id == student.student_id
+                    )
+                )
+            )
             if not subs:
-                tk.Label(sub_card, text="Абонементов пока нет", bg="white",
-                         fg="#6b7590").pack(anchor="w", pady=4)
+                tk.Label(
+                    sub_card, text="Абонементов пока нет", bg="white", fg="#6b7590"
+                ).pack(anchor="w", pady=4)
             for sub in subs:
                 type_name = (
-                    sub.subscription_type.name
-                    if sub.subscription_type else "Абонемент"
+                    sub.subscription_type.name if sub.subscription_type else "Абонемент"
                 )
                 status = self._status_label(sub.status)
                 tk.Label(
                     sub_card,
                     text=f"• {type_name} — осталось {sub.remaining_lessons} зан., "
-                    f"{status}", bg="white", fg="#1a1f33",
+                    f"{status}",
+                    bg="white",
+                    fg="#1a1f33",
                     font=("Segoe UI", 10),
                 ).pack(anchor="w", pady=2)
 
         schedule_card = tk.Frame(self.frame, bg="white", padx=16, pady=14)
         schedule_card.pack(fill=tk.BOTH, expand=True, pady=(12, 0))
-        tk.Label(schedule_card, text="Расписание занятий", bg="white",
-                 fg="#1a1f33", font=("Segoe UI", 11, "bold")).pack(anchor="w")
+        tk.Label(
+            schedule_card,
+            text="Расписание занятий",
+            bg="white",
+            fg="#1a1f33",
+            font=("Segoe UI", 11, "bold"),
+        ).pack(anchor="w")
         lessons = self.service.get_upcoming_lessons()
         if not lessons:
-            tk.Label(schedule_card, text="Занятий пока нет", bg="white",
-                     fg="#6b7590").pack(anchor="w", pady=4)
+            tk.Label(
+                schedule_card, text="Занятий пока нет", bg="white", fg="#6b7590"
+            ).pack(anchor="w", pady=4)
         for day, time_text, name in lessons:
             tk.Label(
-                schedule_card, text=f" {day}, {time_text} — {name}",
-                bg="white", fg="#1a1f33", font=("Segoe UI", 10),
+                schedule_card,
+                text=f" {day}, {time_text} — {name}",
+                bg="white",
+                fg="#1a1f33",
+                font=("Segoe UI", 10),
             ).pack(anchor="w", pady=2)
 
     @staticmethod
@@ -167,6 +213,7 @@ class DashboardView:
             Строка для показа.
         """
         return {
-            "active": "активен", "expired": "закончился",
+            "active": "активен",
+            "expired": "закончился",
             "cancelled": "отменён",
         }.get(status, status)

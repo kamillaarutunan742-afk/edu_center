@@ -35,20 +35,27 @@ class AttendanceView:
 
         self.frame = tk.Frame(parent, bg="#f5f6fa")
         self.frame.pack(fill=tk.BOTH, expand=True)
-        make_header(self.frame, "Посещаемость", "✅ Отметить посещаемость",
-                    self._on_mark)
+        make_header(
+            self.frame, "Посещаемость", "✅ Отметить посещаемость", self._on_mark
+        )
 
         card = tk.Frame(self.frame, bg="white", padx=20, pady=16)
         card.pack(fill=tk.BOTH, expand=True, pady=(14, 0))
 
         self.table = ttk.Treeview(
-            card, show="headings", selectmode="browse",
+            card,
+            show="headings",
+            selectmode="browse",
             columns=("id", "date", "group", "student", "status", "sub", "spent"),
         )
         for column, text, width in (
-            ("id", "№", 50), ("date", "Дата", 110), ("group", "Группа", 140),
-            ("student", "Ученик", 190), ("status", "Статус", 130),
-            ("sub", "Абонемент", 120), ("spent", "Списано", 80),
+            ("id", "№", 50),
+            ("date", "Дата", 110),
+            ("group", "Группа", 140),
+            ("student", "Ученик", 190),
+            ("status", "Статус", 130),
+            ("sub", "Абонемент", 120),
+            ("spent", "Списано", 80),
         ):
             self.table.heading(column, text=text)
             self.table.column(column, width=width, anchor=tk.W)
@@ -65,12 +72,17 @@ class AttendanceView:
     def refresh(self) -> None:
         """Перезагружает таблицу отметок."""
         self.table.delete(*self.table.get_children())
-        tag_map = {"Присутствовал": "present", "Отсутствовал": "absent",
-                   "Болел": "sick"}
+        tag_map = {
+            "Присутствовал": "present",
+            "Отсутствовал": "absent",
+            "Болел": "sick",
+        }
         for row in self.service.get_table_rows():
             record_id, date_text, group, student, status, sub, spent = row
             self.table.insert(
-                "", tk.END, tags=(tag_map.get(status, "absent"),),
+                "",
+                tk.END,
+                tags=(tag_map.get(status, "absent"),),
                 values=(record_id, date_text, group, student, status, sub, spent),
             )
 
@@ -85,8 +97,9 @@ class AttendanceView:
                 "Посещаемость", "Сначала создайте группу", parent=self.frame
             )
             return
-        chooser = ChoiceDialog(self.frame, "Отметка посещаемости", options,
-                               "Выберите группу:")
+        chooser = ChoiceDialog(
+            self.frame, "Отметка посещаемости", options, "Выберите группу:"
+        )
         self.frame.wait_window(chooser.top)
         if chooser.result is None:
             return
@@ -105,8 +118,9 @@ class AttendanceView:
 
         head = tk.Frame(top, bg="white", padx=20, pady=12)
         head.pack(fill=tk.X)
-        tk.Label(head, text="Дата (ДД.ММ.ГГГГ)", bg="white",
-                 fg="#5a6478").pack(side=tk.LEFT)
+        tk.Label(head, text="Дата (ДД.ММ.ГГГГ)", bg="white", fg="#5a6478").pack(
+            side=tk.LEFT
+        )
         date_entry = tk.Entry(head, width=12)
         date_entry.insert(0, date.today().strftime("%d.%m.%Y"))
         date_entry.pack(side=tk.LEFT, padx=8)
@@ -117,10 +131,17 @@ class AttendanceView:
         for student in students:
             row_frame = tk.Frame(body, bg="white")
             row_frame.pack(fill=tk.X, pady=4)
-            tk.Label(row_frame, text=student.full_name, bg="white",
-                     fg="#1a1f33", font=("Segoe UI", 10)).pack(side=tk.LEFT)
+            tk.Label(
+                row_frame,
+                text=student.full_name,
+                bg="white",
+                fg="#1a1f33",
+                font=("Segoe UI", 10),
+            ).pack(side=tk.LEFT)
             combo = ttk.Combobox(
-                row_frame, state="readonly", width=16,
+                row_frame,
+                state="readonly",
+                width=16,
                 values=[label for _, label in STATUS_OPTIONS],
             )
             combo.current(0)
@@ -150,14 +171,19 @@ class AttendanceView:
                 return
             top.destroy()
             self.refresh()
-            messagebox.showinfo(
-                "Посещаемость", "Отметки сохранены", parent=self.frame
-            )
+            messagebox.showinfo("Посещаемость", "Отметки сохранены", parent=self.frame)
 
         tk.Button(
-            head, text="Сохранить", command=on_save, cursor="hand2",
-            bg="#1a1f33", fg="white", font=("Segoe UI", 10, "bold"),
-            relief=tk.FLAT, bd=0, activebackground="#2e3554",
+            head,
+            text="Сохранить",
+            command=on_save,
+            cursor="hand2",
+            bg="#1a1f33",
+            fg="white",
+            font=("Segoe UI", 10, "bold"),
+            relief=tk.FLAT,
+            bd=0,
+            activebackground="#2e3554",
             activeforeground="white",
         ).pack(side=tk.RIGHT)
 
