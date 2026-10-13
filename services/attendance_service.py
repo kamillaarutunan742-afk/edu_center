@@ -4,7 +4,12 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from database.models import (
-    Attendance, Group, GroupStudent, Student, Subscription, SubscriptionType,
+    Attendance,
+    Group,
+    GroupStudent,
+    Student,
+    Subscription,
+    SubscriptionType,
 )
 from repositories.base_repository import BaseRepository
 from services.subscription_service import SubscriptionService
@@ -14,7 +19,9 @@ class AttendanceService:
     """Бизнес-логика посещаемости."""
 
     STATUS_LABELS = {
-        "present": "Присутствовал", "absent": "Отсутствовал", "sick": "Болел",
+        "present": "Присутствовал",
+        "absent": "Отсутствовал",
+        "sick": "Болел",
     }
 
     def __init__(self, session: Session) -> None:
@@ -54,8 +61,7 @@ class AttendanceService:
                 students.append(student)
         return students
 
-    def mark_lesson(self, group: Group, lesson_date,
-                    statuses: dict[int, str]) -> None:
+    def mark_lesson(self, group: Group, lesson_date, statuses: dict[int, str]) -> None:
         """Отмечает посещаемость группы на дату; присутствующим списывает занятие.
 
         Args:
@@ -85,7 +91,8 @@ class AttendanceService:
                 self.repo.create(
                     student_id=student.student_id,
                     group_id=group.group_id,
-                    lesson_date=lesson_date, status=status,
+                    lesson_date=lesson_date,
+                    status=status,
                 )
             if status == "present":
                 subscription = self.session.scalars(
@@ -113,14 +120,13 @@ class AttendanceService:
         student_ids = None
         if group_id is not None:
             student_ids = {
-                link.student_id for link in self.session.scalars(
+                link.student_id
+                for link in self.session.scalars(
                     select(GroupStudent).where(GroupStudent.group_id == group_id)
                 )
             }
         rows = []
-        records = sorted(
-            self.repo.get_all(), key=lambda r: r.lesson_date, reverse=True
-        )
+        records = sorted(self.repo.get_all(), key=lambda r: r.lesson_date, reverse=True)
         for record in records:
             if student_ids is not None and record.student_id not in student_ids:
                 continue
@@ -152,17 +158,20 @@ class AttendanceService:
             if latest_sub is not None:
                 sub_type = latest_sub.subscription_type
                 if sub_type is None and getattr(latest_sub, "type_id", None):
-                    sub_type = self.session.get(
-                        SubscriptionType, latest_sub.type_id
-                    )
+                    sub_type = self.session.get(SubscriptionType, latest_sub.type_id)
                 if sub_type is not None:
                     sub_name = sub_type.name
 
             spent = "-1" if record.status == "present" else "—"
-            rows.append((
-                record.attendance_id, str(record.lesson_date), group_name,
-                student.full_name,
-                self.STATUS_LABELS.get(record.status, record.status),
-                sub_name, spent,
-            ))
+            rows.append(
+                (
+                    record.attendance_id,
+                    str(record.lesson_date),
+                    group_name,
+                    student.full_name,
+                    self.STATUS_LABELS.get(record.status, record.status),
+                    sub_name,
+                    spent,
+                )
+            )
         return rows

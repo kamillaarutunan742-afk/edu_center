@@ -6,8 +6,15 @@ from sqlalchemy.orm import Session
 from database.models import Group, Schedule
 from repositories.base_repository import BaseRepository
 
-DAYS = ("Понедельник", "Вторник", "Среда", "Четверг",
-        "Пятница", "Суббота", "Воскресенье")
+DAYS = (
+    "Понедельник",
+    "Вторник",
+    "Среда",
+    "Четверг",
+    "Пятница",
+    "Суббота",
+    "Воскресенье",
+)
 
 
 class ScheduleService:
@@ -67,8 +74,7 @@ class ScheduleService:
         ):
             if self._norm_time(item.start_time) != start_norm:
                 continue
-            item_room = (getattr(item, "room", "") or getattr(item, "cabinet", "")
-                         or "")
+            item_room = getattr(item, "room", "") or getattr(item, "cabinet", "") or ""
             if place and item_room and item_room == place:
                 return item
             item_group = self.session.get(Group, item.group_id)
@@ -81,8 +87,9 @@ class ScheduleService:
                 return item
         return None
 
-    def create_lesson(self, group_id: int, day: str, start: str,
-                      end: str = "", room: str = "") -> Schedule:
+    def create_lesson(
+        self, group_id: int, day: str, start: str, end: str = "", room: str = ""
+    ) -> Schedule:
         """Создаёт занятие с проверкой конфликта.
 
         Args:
@@ -141,20 +148,25 @@ class ScheduleService:
         for item in self.get_all():
             group = self.session.get(Group, item.group_id)
             name = group.name if group else "—"
-            teacher = group.teacher.full_name if (
-                group is not None and group.teacher is not None
-            ) else "—"
-            room = (
-                getattr(item, "room", None) or getattr(item, "cabinet", None)
-                or "—"
+            teacher = (
+                group.teacher.full_name
+                if (group is not None and group.teacher is not None)
+                else "—"
             )
+            room = getattr(item, "room", None) or getattr(item, "cabinet", None) or "—"
             end = getattr(item, "end_time", None)
             time_text = self._norm_time(item.start_time)
             if end:
                 time_text = f"{time_text}–{self._norm_time(end)}"
-            rows.append((
-                getattr(item, "schedule_id", 0),
-                item.day_of_week, time_text, name, teacher, room,
-            ))
+            rows.append(
+                (
+                    getattr(item, "schedule_id", 0),
+                    item.day_of_week,
+                    time_text,
+                    name,
+                    teacher,
+                    room,
+                )
+            )
         rows.sort(key=lambda r: (DAYS.index(r[1]) if r[1] in DAYS else 99, r[2]))
         return rows

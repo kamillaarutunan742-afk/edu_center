@@ -6,7 +6,12 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from database.models import (
-    Attendance, Group, GroupStudent, Payment, Student, Subscription,
+    Attendance,
+    Group,
+    GroupStudent,
+    Payment,
+    Student,
+    Subscription,
 )
 from repositories.base_repository import BaseRepository
 
@@ -105,9 +110,7 @@ class StudentService:
         self.session.query(Attendance).filter(
             Attendance.student_id == student_id
         ).delete()
-        self.session.query(Payment).filter(
-            Payment.student_id == student_id
-        ).delete()
+        self.session.query(Payment).filter(Payment.student_id == student_id).delete()
         self.session.query(Subscription).filter(
             Subscription.student_id == student_id
         ).delete()
@@ -127,9 +130,7 @@ class StudentService:
         for link in links:
             group = self.session.get(Group, link.group_id)
             if group:
-                groups_by_student.setdefault(link.student_id, []).append(
-                    group.name
-                )
+                groups_by_student.setdefault(link.student_id, []).append(group.name)
 
         subs_by_student: dict[int, str] = {}
         price_by_student: dict[int, float] = {}
@@ -143,24 +144,27 @@ class StudentService:
                     + sub.subscription_type.price
                 )
 
-        paid: dict[int, float] = dict(self.session.execute(
-            select(
-                Payment.student_id,
-                func.coalesce(func.sum(Payment.amount), 0.0),
-            ).group_by(Payment.student_id)
-        ).all())
+        paid: dict[int, float] = dict(
+            self.session.execute(
+                select(
+                    Payment.student_id,
+                    func.coalesce(func.sum(Payment.amount), 0.0),
+                ).group_by(Payment.student_id)
+            ).all()
+        )
 
         rows = []
         for student in self.get_all_students():
             sid = student.student_id
             debt = max(price_by_student.get(sid, 0) - paid.get(sid, 0), 0)
-            rows.append((
-                sid,
-                student.full_name,
-                student.phone or "—",
-                ", ".join(groups_by_student.get(sid, [])) or "—",
-                subs_by_student.get(sid, "—"),
-                debt,
-            ))
+            rows.append(
+                (
+                    sid,
+                    student.full_name,
+                    student.phone or "—",
+                    ", ".join(groups_by_student.get(sid, [])) or "—",
+                    subs_by_student.get(sid, "—"),
+                    debt,
+                )
+            )
         return rows
-

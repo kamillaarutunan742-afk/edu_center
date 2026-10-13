@@ -81,7 +81,9 @@ def register_user(
         session.close()
 
 
-def change_password(login: str, old_password: str, new_password: str) -> tuple[bool, str]:
+def change_password(
+    login: str, old_password: str, new_password: str
+) -> tuple[bool, str]:
     """Меняет пароль после проверки текущего.
 
     Args:

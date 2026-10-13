@@ -27,9 +27,7 @@ class PaymentService:
         Returns:
             Список объектов Payment.
         """
-        return sorted(
-            self.repo.get_all(), key=lambda p: p.payment_date, reverse=True
-        )
+        return sorted(self.repo.get_all(), key=lambda p: p.payment_date, reverse=True)
 
     def get_revenue(self, start: date, end: date) -> float:
         """Считает выручку за период.
@@ -41,12 +39,15 @@ class PaymentService:
         Returns:
             Сумма оплат за период.
         """
-        return self.session.scalar(
-            select(func.coalesce(func.sum(Payment.amount), 0.0)).where(
-                Payment.payment_date >= start,
-                Payment.payment_date <= end,
+        return (
+            self.session.scalar(
+                select(func.coalesce(func.sum(Payment.amount), 0.0)).where(
+                    Payment.payment_date >= start,
+                    Payment.payment_date <= end,
+                )
             )
-        ) or 0.0
+            or 0.0
+        )
 
     def _latest_subscription(self, student_id: int) -> Subscription | None:
         """Возвращает последний абонемент ученика.
@@ -91,8 +92,14 @@ class PaymentService:
             name = student.full_name if student is not None else "—"
             latest = self._latest_subscription(payment.student_id)
             method = getattr(payment, "method", "") or "—"
-            rows.append((
-                payment.payment_id, str(payment.payment_date), name,
-                self._subscription_name(latest), float(payment.amount), method,
-            ))
+            rows.append(
+                (
+                    payment.payment_id,
+                    str(payment.payment_date),
+                    name,
+                    self._subscription_name(latest),
+                    float(payment.amount),
+                    method,
+                )
+            )
         return rows

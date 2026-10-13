@@ -6,8 +6,15 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from database.models import (
-    Attendance, Group, GroupStudent, Notification, Payment, Schedule,
-    Student, Subscription, Teacher,
+    Attendance,
+    Group,
+    GroupStudent,
+    Notification,
+    Payment,
+    Schedule,
+    Student,
+    Subscription,
+    Teacher,
 )
 from services.attendance_service import AttendanceService
 from services.payment_service import PaymentService
@@ -17,8 +24,13 @@ class ReportService:
     """Агрегированные показатели приложения."""
 
     DAY_ORDER = (
-        "Понедельник", "Вторник", "Среда", "Четверг",
-        "Пятница", "Суббота", "Воскресенье",
+        "Понедельник",
+        "Вторник",
+        "Среда",
+        "Четверг",
+        "Пятница",
+        "Суббота",
+        "Воскресенье",
     )
 
     def __init__(self, session: Session) -> None:
@@ -58,9 +70,7 @@ class ReportService:
                 )
             )
             or 0,
-            "Выручка за месяц, ₽": self.payments.get_revenue(
-                month_start, date.today()
-            ),
+            "Выручка за месяц, ₽": self.payments.get_revenue(month_start, date.today()),
         }
 
     def get_group_sizes(self) -> list[tuple[str, int]]:
@@ -81,12 +91,15 @@ class ReportService:
             Количество отметок «присутствовал».
         """
         start = date.today() - timedelta(days=7)
-        return self.session.scalar(
-            select(func.count(Attendance.attendance_id)).where(
-                Attendance.lesson_date >= start,
-                Attendance.status == "present",
+        return (
+            self.session.scalar(
+                select(func.count(Attendance.attendance_id)).where(
+                    Attendance.lesson_date >= start,
+                    Attendance.status == "present",
+                )
             )
-        ) or 0
+            or 0
+        )
 
     def count_unread_notifications(self) -> int:
         """Считает уведомления за последние 7 дней как «новые».
@@ -95,11 +108,14 @@ class ReportService:
             Количество свежих уведомлений.
         """
         start = date.today() - timedelta(days=7)
-        return self.session.scalar(
-            select(func.count(Notification.notification_id)).where(
-                Notification.created_at >= start
+        return (
+            self.session.scalar(
+                select(func.count(Notification.notification_id)).where(
+                    Notification.created_at >= start
+                )
             )
-        ) or 0
+            or 0
+        )
 
     def get_upcoming_lessons(self) -> list[tuple[str, str, str]]:
         """Возвращает занятия по дням недели для дашборда.
@@ -123,23 +139,29 @@ class ReportService:
             Список кортежей (тип, текст); тип — «warn» или «danger».
         """
         items: list[tuple[str, str]] = []
-        subs = list(self.session.scalars(
-            select(Subscription).where(Subscription.status == "active")
-        ))
+        subs = list(
+            self.session.scalars(
+                select(Subscription).where(Subscription.status == "active")
+            )
+        )
         for sub in subs:
             if sub.remaining_lessons <= 2:
                 name = sub.student.full_name if sub.student else "—"
-                items.append((
-                    "warn",
-                    f"Абонемент {name} — осталось {sub.remaining_lessons} зан.",
-                ))
+                items.append(
+                    (
+                        "warn",
+                        f"Абонемент {name} — осталось {sub.remaining_lessons} зан.",
+                    )
+                )
 
-        paid: dict[int, float] = dict(self.session.execute(
-            select(
-                Payment.student_id,
-                func.coalesce(func.sum(Payment.amount), 0.0),
-            ).group_by(Payment.student_id)
-        ).all())
+        paid: dict[int, float] = dict(
+            self.session.execute(
+                select(
+                    Payment.student_id,
+                    func.coalesce(func.sum(Payment.amount), 0.0),
+                ).group_by(Payment.student_id)
+            ).all()
+        )
 
         debts: dict[int, float] = {}
         for sub in subs:
@@ -190,24 +212,34 @@ class ReportService:
                     if group is not None:
                         group_name = group.name
                         break
-                rows.append((
-                    str(record.lesson_date), group_name, student.full_name,
-                    labels.get(record.status, record.status),
-                    "-1" if record.status == "present" else "—",
-                ))
+                rows.append(
+                    (
+                        str(record.lesson_date),
+                        group_name,
+                        student.full_name,
+                        labels.get(record.status, record.status),
+                        "-1" if record.status == "present" else "—",
+                    )
+                )
             rows.sort(key=lambda r: r[0])
             return headers, rows
 
         headers = ("Дата", "Ученик", "Абонемент", "Сумма", "Способ")
         rows = []
-        for _, date_text, student, sub_name, amount, method in (
-            self.payments.get_table_rows()
-        ):
+        for (
+            _,
+            date_text,
+            student,
+            sub_name,
+            amount,
+            method,
+        ) in self.payments.get_table_rows():
             try:
                 payment_date = datetime.strptime(date_text, "%Y-%m-%d").date()
             except ValueError:
                 continue
             if start <= payment_date <= end:
-                rows.append((date_text, student, sub_name,
-                             f"{amount:.0f} руб.", method))
+                rows.append(
+                    (date_text, student, sub_name, f"{amount:.0f} руб.", method)
+                )
         return headers, rows

@@ -45,15 +45,27 @@ class GroupService:
         """
         columns = Group.__table__.columns.keys()
         return [
-            name for name in
-            ("lessons_per_week", "capacity", "max_students", "age_range",
-             "age_group", "teacher_id")
+            name
+            for name in (
+                "lessons_per_week",
+                "capacity",
+                "max_students",
+                "age_range",
+                "age_group",
+                "teacher_id",
+            )
             if name in columns
         ]
 
-    def create_group(self, name: str, direction: str, age_range: str,
-                     level: str, number: int = 12,
-                     teacher_id: int | None = None) -> Group:
+    def create_group(
+        self,
+        name: str,
+        direction: str,
+        age_range: str,
+        level: str,
+        number: int = 12,
+        teacher_id: int | None = None,
+    ) -> Group:
         """Создаёт группу с валидацией и адаптацией под модель.
 
         Args:
@@ -76,9 +88,7 @@ class GroupService:
             raise ValueError("Выберите направление из списка")
         if level not in LEVELS:
             raise ValueError("Выберите уровень из списка")
-        existing = self.session.scalar(
-            select(Group).where(Group.name == name.strip())
-        )
+        existing = self.session.scalar(select(Group).where(Group.name == name.strip()))
         if existing is not None:
             raise ValueError("Группа с таким названием уже существует")
         try:
@@ -185,19 +195,27 @@ class GroupService:
             teacher_name = teacher.full_name if teacher is not None else "—"
             level = getattr(group, "level", "") or ""
             level_text = {
-                "beginner": "Начинающий", "elementary": "Элементарный",
-                "intermediate": "Средний", "advanced": "Продвинутый",
+                "beginner": "Начинающий",
+                "elementary": "Элементарный",
+                "intermediate": "Средний",
+                "advanced": "Продвинутый",
             }.get(level, level or "—")
             age = (
                 getattr(group, "age_range", None)
-                or getattr(group, "age_group", None) or "—"
+                or getattr(group, "age_group", None)
+                or "—"
             )
-            rows.append((
-                group.group_id, group.name,
-                getattr(group, "direction", "") or "—",
-                age, level_text, teacher_name,
-                len(self.get_students(group)),
-            ))
+            rows.append(
+                (
+                    group.group_id,
+                    group.name,
+                    getattr(group, "direction", "") or "—",
+                    age,
+                    level_text,
+                    teacher_name,
+                    len(self.get_students(group)),
+                )
+            )
         return rows
 
     def delete(self, group: Group) -> None:

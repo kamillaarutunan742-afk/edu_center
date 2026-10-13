@@ -20,9 +20,7 @@ def main() -> None:
     """Проверяет колонки и добавляет недостающие через ALTER TABLE."""
     for model, columns in TABLES.items():
         table = model.__table__.name
-        existing = [
-            column["name"] for column in inspect(engine).get_columns(table)
-        ]
+        existing = [column["name"] for column in inspect(engine).get_columns(table)]
         print(f"{table}: колонки -> {existing}")
         for name, ddl in columns:
             if name in existing:
