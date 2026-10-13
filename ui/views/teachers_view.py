@@ -72,9 +72,15 @@ class TeachersView:
         self.table.delete(*self.table.get_children())
         for teacher in self.service.get_all_teachers():
             self.table.insert(
-                "", tk.END, iid=str(teacher.teacher_id),
-                values=(teacher.teacher_id, teacher.full_name,
-                        teacher.phone or "", teacher.subjects or ""),
+                "",
+                tk.END,
+                iid=str(teacher.teacher_id),
+                values=(
+                    teacher.teacher_id,
+                    teacher.full_name,
+                    teacher.phone or "",
+                    teacher.subjects or "",
+                ),
             )
 
     def _get_selected_teacher(self):
@@ -82,7 +88,8 @@ class TeachersView:
         selected = self.table.selection()
         if not selected:
             messagebox.showinfo(
-                "Преподаватели", "Выберите преподавателя в таблице",
+                "Преподаватели",
+                "Выберите преподавателя в таблице",
                 parent=self.frame,
             )
             return None
@@ -107,7 +114,9 @@ class TeachersView:
         if teacher is None:
             return
         dialog = FormDialog(
-            self.frame, "Редактировать преподавателя", self._form_fields(),
+            self.frame,
+            "Редактировать преподавателя",
+            self._form_fields(),
             initial={
                 "full_name": teacher.full_name,
                 "phone": teacher.phone or "",
@@ -130,7 +139,8 @@ class TeachersView:
         if teacher is None:
             return
         if not messagebox.askyesno(
-            "Удаление", f"Удалить преподавателя «{teacher.full_name}»?",
+            "Удаление",
+            f"Удалить преподавателя «{teacher.full_name}»?",
             parent=self.frame,
         ):
             return
@@ -139,7 +149,8 @@ class TeachersView:
         except Exception:
             self.session.rollback()
             messagebox.showerror(
-                "Преподаватели", "Не удалось удалить преподавателя",
+                "Преподаватели",
+                "Не удалось удалить преподавателя",
                 parent=self.frame,
             )
             return

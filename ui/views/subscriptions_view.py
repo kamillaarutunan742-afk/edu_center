@@ -32,7 +32,9 @@ class SubscriptionsView:
         actions = tk.Frame(self.frame, bg="#f5f6fa")
         actions.pack(fill=tk.X, pady=(10, 0))
         ttk.Button(
-            actions, text="+ Добавить тип абонемента", style="Secondary.TButton",
+            actions,
+            text="+ Добавить тип абонемента",
+            style="Secondary.TButton",
             command=self._on_add_type,
         ).pack(side=tk.LEFT)
 
@@ -40,13 +42,19 @@ class SubscriptionsView:
         card.pack(fill=tk.BOTH, expand=True, pady=(12, 0))
 
         self.table = ttk.Treeview(
-            card, show="headings", selectmode="browse",
+            card,
+            show="headings",
+            selectmode="browse",
             columns=("id", "student", "type", "left", "total", "price", "status"),
         )
         for column, text, width in (
-            ("id", "№", 50), ("student", "Ученик", 200), ("type", "Тип", 120),
-            ("left", "Осталось", 80), ("total", "Всего", 70),
-            ("price", "Цена", 90), ("status", "Статус", 110),
+            ("id", "№", 50),
+            ("student", "Ученик", 200),
+            ("type", "Тип", 120),
+            ("left", "Осталось", 80),
+            ("total", "Всего", 70),
+            ("price", "Цена", 90),
+            ("status", "Статус", 110),
         ):
             self.table.heading(column, text=text)
             self.table.column(column, width=width, anchor=tk.W)
@@ -57,11 +65,21 @@ class SubscriptionsView:
 
         types_card = tk.Frame(self.frame, bg="white", padx=20, pady=12)
         types_card.pack(fill=tk.X, pady=(12, 0))
-        tk.Label(types_card, text="Типы абонементов", bg="white", fg="#6b7590",
-                 font=("Segoe UI", 9, "bold")).pack(anchor="w")
+        tk.Label(
+            types_card,
+            text="Типы абонементов",
+            bg="white",
+            fg="#6b7590",
+            font=("Segoe UI", 9, "bold"),
+        ).pack(anchor="w")
         self.types_label = tk.Label(
-            types_card, text="", bg="white", fg="#1a1f33",
-            font=("Segoe UI", 10), justify=tk.LEFT, anchor="w",
+            types_card,
+            text="",
+            bg="white",
+            fg="#1a1f33",
+            font=("Segoe UI", 10),
+            justify=tk.LEFT,
+            anchor="w",
         )
         self.types_label.pack(anchor="w", pady=(4, 0))
 
@@ -74,25 +92,38 @@ class SubscriptionsView:
             sub_id, student, type_name, left, total, price, status = row
             status_text = self.service.STATUS_LABELS.get(status, status)
             self.table.insert(
-                "", tk.END,
-                values=(sub_id, student, type_name, left, total,
-                        f"{price:.0f} ₽", status_text),
+                "",
+                tk.END,
+                values=(
+                    sub_id,
+                    student,
+                    type_name,
+                    left,
+                    total,
+                    f"{price:.0f} ₽",
+                    status_text,
+                ),
             )
         types = self.service.get_all_types()
         self.types_label.config(
             text="   ".join(
                 f"{item.name}: {item.lessons_count} зан. — {item.price:.0f} ₽"
                 for item in types
-            ) or "Типов пока нет — добавьте первый"
+            )
+            or "Типов пока нет — добавьте первый"
         )
 
     def _on_add_type(self) -> None:
         """Открывает форму создания типа абонемента."""
-        dialog = FormDialog(self.frame, "Новый тип абонемента", [
-            ("name", "Название", "entry", ()),
-            ("lessons", "Количество занятий", "entry", ()),
-            ("price", "Цена", "entry", ()),
-        ])
+        dialog = FormDialog(
+            self.frame,
+            "Новый тип абонемента",
+            [
+                ("name", "Название", "entry", ()),
+                ("lessons", "Количество занятий", "entry", ()),
+                ("price", "Цена", "entry", ()),
+            ],
+        )
         self.frame.wait_window(dialog.top)
         if not dialog.result:
             return
@@ -114,8 +145,9 @@ class SubscriptionsView:
                 "Абонементы", "Сначала добавьте тип абонемента", parent=self.frame
             )
             return
-        type_dialog = ChoiceDialog(self.frame, "Тип абонемента", type_options,
-                                   "Выберите тип:")
+        type_dialog = ChoiceDialog(
+            self.frame, "Тип абонемента", type_options, "Выберите тип:"
+        )
         self.frame.wait_window(type_dialog.top)
         if type_dialog.result is None:
             return
@@ -128,15 +160,14 @@ class SubscriptionsView:
                 "Абонементы", "Сначала добавьте учеников", parent=self.frame
             )
             return
-        student_dialog = ChoiceDialog(self.frame, "Ученик", student_options,
-                                      "Выберите ученика:")
+        student_dialog = ChoiceDialog(
+            self.frame, "Ученик", student_options, "Выберите ученика:"
+        )
         self.frame.wait_window(student_dialog.top)
         if student_dialog.result is None:
             return
         try:
-            self.service.sell_subscription(
-                student_dialog.result, type_dialog.result
-            )
+            self.service.sell_subscription(student_dialog.result, type_dialog.result)
         except ValueError as error:
             messagebox.showerror("Абонементы", str(error), parent=self.frame)
         self.refresh()

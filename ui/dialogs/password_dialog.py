@@ -34,21 +34,34 @@ class ChangePasswordDialog:
 
         self.entries: dict[str, tk.Entry] = {}
         for key, label in (
-            ("old", "Текущий пароль"), ("new", "Новый пароль"),
+            ("old", "Текущий пароль"),
+            ("new", "Новый пароль"),
             ("repeat", "Повторите новый пароль"),
         ):
             tk.Label(form, text=label, bg="white", fg="#5a6478").pack(anchor="w")
             entry = tk.Entry(
-                form, width=28, show="•", relief=tk.FLAT, bg="#f5f6fa",
-                highlightthickness=1, highlightbackground="#dfe4ec",
+                form,
+                width=28,
+                show="•",
+                relief=tk.FLAT,
+                bg="#f5f6fa",
+                highlightthickness=1,
+                highlightbackground="#dfe4ec",
             )
             entry.pack(fill=tk.X, pady=(2, 10), ipady=4)
             self.entries[key] = entry
 
         save_button = tk.Button(
-            form, text="Сменить пароль", command=self._on_save, cursor="hand2",
-            bg="#1a1f33", fg="white", font=("Segoe UI", 10, "bold"),
-            relief=tk.FLAT, bd=0, activebackground="#2e3554",
+            form,
+            text="Сменить пароль",
+            command=self._on_save,
+            cursor="hand2",
+            bg="#1a1f33",
+            fg="white",
+            font=("Segoe UI", 10, "bold"),
+            relief=tk.FLAT,
+            bd=0,
+            activebackground="#2e3554",
             activeforeground="white",
         )
         save_button.pack(fill=tk.X, ipady=6, pady=(4, 0))
@@ -62,7 +75,9 @@ class ChangePasswordDialog:
             )
             return
         ok, message = change_password(
-            self.login, self.entries["old"].get(), new,
+            self.login,
+            self.entries["old"].get(),
+            new,
         )
         if ok:
             messagebox.showinfo("Смена пароля", message, parent=self.top)

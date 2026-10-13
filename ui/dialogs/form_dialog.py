@@ -11,8 +11,9 @@ class FormDialog:
         result: словарь {ключ: значение} или None при отмене.
     """
 
-    def __init__(self, parent: tk.Widget, title: str, fields: list,
-                 initial: dict | None = None) -> None:
+    def __init__(
+        self, parent: tk.Widget, title: str, fields: list, initial: dict | None = None
+    ) -> None:
         """Создаёт диалог.
 
         Args:
@@ -37,11 +38,14 @@ class FormDialog:
         form.pack(fill=tk.BOTH, expand=True)
 
         for key, label, kind, options in fields:
-            tk.Label(form, text=label, bg="white", fg="#5a6478",
-                     font=("Segoe UI", 10)).pack(anchor="w")
+            tk.Label(
+                form, text=label, bg="white", fg="#5a6478", font=("Segoe UI", 10)
+            ).pack(anchor="w")
             if kind == "combo":
                 widget = ttk.Combobox(
-                    form, state="readonly", width=28,
+                    form,
+                    state="readonly",
+                    width=28,
                     values=[label for _, label in options],
                 )
                 values = [value for value, _ in options]
@@ -55,8 +59,12 @@ class FormDialog:
                 self.widgets[key] = widget
             else:
                 widget = tk.Entry(
-                    form, width=30, relief=tk.FLAT, bg="#f5f6fa",
-                    highlightthickness=1, highlightbackground="#dfe4ec",
+                    form,
+                    width=30,
+                    relief=tk.FLAT,
+                    bg="#f5f6fa",
+                    highlightthickness=1,
+                    highlightbackground="#dfe4ec",
                     font=("Segoe UI", 10),
                 )
                 if self.initial.get(key) is not None:
@@ -67,15 +75,29 @@ class FormDialog:
         buttons = tk.Frame(form, bg="white")
         buttons.pack(fill=tk.X, pady=(6, 0))
         tk.Button(
-            buttons, text="Сохранить", command=self._on_save, cursor="hand2",
-            bg="#1a1f33", fg="white", font=("Segoe UI", 10, "bold"),
-            relief=tk.FLAT, bd=0, activebackground="#2e3554",
+            buttons,
+            text="Сохранить",
+            command=self._on_save,
+            cursor="hand2",
+            bg="#1a1f33",
+            fg="white",
+            font=("Segoe UI", 10, "bold"),
+            relief=tk.FLAT,
+            bd=0,
+            activebackground="#2e3554",
             activeforeground="white",
         ).pack(side=tk.LEFT, padx=(0, 8), ipadx=14, ipady=5)
         tk.Button(
-            buttons, text="Отмена", command=self.top.destroy, cursor="hand2",
-            bg="#f5f6fa", fg="#1a1f33", font=("Segoe UI", 10),
-            relief=tk.FLAT, bd=0, activebackground="#e2e6ee",
+            buttons,
+            text="Отмена",
+            command=self.top.destroy,
+            cursor="hand2",
+            bg="#f5f6fa",
+            fg="#1a1f33",
+            font=("Segoe UI", 10),
+            relief=tk.FLAT,
+            bd=0,
+            activebackground="#e2e6ee",
         ).pack(side=tk.LEFT, ipadx=10, ipady=5)
 
         self.top.wait_visibility()

@@ -14,8 +14,10 @@ DIRECTION_OPTIONS = tuple(
     (d, d) for d in ("Английский", "Немецкий", "Французский", "Испанский")
 )
 LEVEL_OPTIONS = (
-    ("beginner", "Начинающий"), ("elementary", "Элементарный"),
-    ("intermediate", "Средний"), ("advanced", "Продвинутый"),
+    ("beginner", "Начинающий"),
+    ("elementary", "Элементарный"),
+    ("intermediate", "Средний"),
+    ("advanced", "Продвинутый"),
 )
 
 
@@ -40,13 +42,18 @@ class GroupsView:
         card.pack(fill=tk.BOTH, expand=True, pady=(14, 0))
 
         self.table = ttk.Treeview(
-            card, show="headings", selectmode="browse",
+            card,
+            show="headings",
+            selectmode="browse",
             columns=("id", "name", "direction", "age", "level", "teacher", "count"),
         )
         for column, text, width in (
-            ("id", "№", 50), ("name", "Название", 160),
-            ("direction", "Направление", 110), ("age", "Возраст", 90),
-            ("level", "Уровень", 110), ("teacher", "Преподаватель", 180),
+            ("id", "№", 50),
+            ("name", "Название", 160),
+            ("direction", "Направление", 110),
+            ("age", "Возраст", 90),
+            ("level", "Уровень", 110),
+            ("teacher", "Преподаватель", 180),
             ("count", "Учеников", 90),
         ):
             self.table.heading(column, text=text)
@@ -59,11 +66,15 @@ class GroupsView:
         buttons = tk.Frame(card, bg="white")
         buttons.pack(fill=tk.X, pady=(10, 0))
         ttk.Button(
-            buttons, text="✏ Редактировать", style="Secondary.TButton",
+            buttons,
+            text="✏ Редактировать",
+            style="Secondary.TButton",
             command=self._on_edit,
         ).pack(side=tk.LEFT)
         ttk.Button(
-            buttons, text="🗑 Удалить", style="Secondary.TButton",
+            buttons,
+            text="🗑 Удалить",
+            style="Secondary.TButton",
             command=self._on_delete,
         ).pack(side=tk.LEFT, padx=8)
 
@@ -76,13 +87,19 @@ class GroupsView:
             level = getattr(group, "level", "") or ""
             teacher = getattr(group, "teacher", None)
             teacher_name = teacher.full_name if teacher is not None else "—"
-            self.table.insert("", tk.END, values=(
-                group.group_id, group.name,
-                getattr(group, "direction", "") or "—",
-                getattr(group, "age_range", "") or "—",
-                dict(LEVEL_OPTIONS).get(level, level or "—"),
-                teacher_name, len(getattr(group, "students", [])),
-            ))
+            self.table.insert(
+                "",
+                tk.END,
+                values=(
+                    group.group_id,
+                    group.name,
+                    getattr(group, "direction", "") or "—",
+                    getattr(group, "age_range", "") or "—",
+                    dict(LEVEL_OPTIONS).get(level, level or "—"),
+                    teacher_name,
+                    len(getattr(group, "students", [])),
+                ),
+            )
 
     def _selected_group(self) -> Group | None:
         """Возвращает выбранную группу или None с подсказкой."""
@@ -101,6 +118,7 @@ class GroupsView:
             Список кортежей (teacher_id, ФИО).
         """
         from database.models import Teacher
+
         return [
             (teacher.teacher_id, teacher.full_name)
             for teacher in self.session.scalars(select(Teacher))
@@ -125,7 +143,10 @@ class GroupsView:
         data = dialog.result
         try:
             self.service.create_group(
-                data["name"], data["direction"], data["age"], data["level"],
+                data["name"],
+                data["direction"],
+                data["age"],
+                data["level"],
                 int(data["lessons"] or 2),
                 teacher_id=data.get("teacher_id"),
             )
