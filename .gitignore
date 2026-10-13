@@ -3,3 +3,8 @@ __pycache__/
 *.pyc
 *.db
 .vscode/
+# Сборка PyInstaller
+build/
+dist/
+*.spec
+*.zip
