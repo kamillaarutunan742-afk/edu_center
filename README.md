@@ -1,13 +1,24 @@
 # EduCenter — учёт языковой школы
 
-Десктоп-приложение (Python, Tkinter, SQLite) для управления учениками,
-группами, расписанием, посещаемостью, оплатами и абонементами.
+Десктоп-приложение для управления учениками, группами, расписанием,
+посещаемостью, оплатами и абонементами.
+
+## Технологии
+- Python 3
+- Tkinter (интерфейс)
+- SQLAlchemy + SQLite (база данных)
+- pytest (тесты)
 
 ## Запуск
-```bash
-git clone https://github.com/kamillaarutunan742-afk/edu_center.git
-cd edu_center
-python -m venv venv
-source venv/bin/activate        # Windows: venv\Scripts\activate
-pip install -r requirements.txt
-python main.py
+1. Установите Python 3.10+
+2. Скачайте проект: кнопка Code → Download ZIP (или `git clone`)
+3. Установите зависимости:
+   pip install -r requirements.txt
+4. Запустите: `python main.py`
+
+## Структура проекта
+- `database/` — модели базы данных
+- `repositories/` — работа с базой данных
+- `services/` — бизнес-логика
+- `ui/` — окна приложения
+- `tests/` — тесты
